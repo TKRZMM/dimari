@@ -50,13 +50,23 @@ class Dimari
     private $username;
     private $password;
 
+    private $myStatusContent = array('createDimariDBConnection'=>' ',
+                                     'getCustomerByGroupID'=>' ',
+                                     'getContractsByCustomeerID'=>' ',
+                                     'getProductsByContractID'=>' ',
+                                     'getCOVoicedataByCOID'=>' ',
+                                     'getCarrierRef'=>' ',
+                                     'getSubscriberByCOVID'=>' ',
+                                     'getPhoneBookEntrysByCustomerID'=>' ',
+                                     'initialDimariExport'=>' ');
+
 
 
     //private $SET_EXAMPLE_CUSTOMER_ID = '20010190';
     //private $SET_EXAMPLE_CUSTOMER_ID = '20010120';  // Matthias Brumm(!)
     //private $SET_EXAMPLE_CUSTOMER_ID = '20010612';
     //private $SET_EXAMPLE_CUSTOMER_ID = '20010603';
-    //private $SET_EXAMPLE_CUSTOMER_ID = '20011102';
+    private $SET_EXAMPLE_CUSTOMER_ID = '20010003';
 
 
     public function __construct($host, $username, $password)
@@ -88,94 +98,110 @@ class Dimari
         // Status festhalten:
         $this->globalMessage['Status'][] = 'Typ: ' . $this->getGroupType;
 
-        echo "0 START<br>";
         flush();
         ob_flush();
-
 
         // Dimari DB Verbindung herstellen
-        if (!$this->createDimariDBConnection())
-            return false;
-
-        echo "1 ... createDimariDBConnection ... done<br>";
-        flush();
-        ob_flush();
+        $this->flushByFunctionCall('createDimariDBConnection');
 
 
         // Customer einlesen die in der angegebenen GruppenID enthalten sind
-        if (!$this->getCustomerByGroupID())
-            return false;
-
-        echo "2 ... getCustomerByGroupID ... done<br>";
-        flush();
-        ob_flush();
+        $this->flushByFunctionCall('getCustomerByGroupID');
 
 
         // Contracts einlesen die zu den ausgewählten Customer gehören
-        if (!$this->getContractsByCustomeerID())
-            return false;
-
-        echo "3 ... getContractsByCustomeerID ... done<br>";
-        flush();
-        ob_flush();
+        $this->flushByFunctionCall('getContractsByCustomeerID');
 
 
         // CO_Products einlesen die zu den Contracts gehören
-        if (!$this->getProductsByContractID())
-            return false;
-
-        echo "4 .. getProductsByContractID ... done<br>";
-        flush();
-        ob_flush();
+        $this->flushByFunctionCall('getProductsByContractID');
 
 
         // VOIP Daten einlesen
-        if (!$this->getCOVoicedataByCOID())
-          return false;
-
-        echo "5 ... getCOVoicedataByCOID ... done<br>";
-        flush();
-        ob_flush();
+        $this->flushByFunctionCall('getCOVoicedataByCOID');
 
 
         // Carrier Referenz einlesen
-        if (!$this->getCarrierRef())
-            return false;
-        echo "6 ... getCarrierRef ... done<br>";
-        flush();
-        ob_flush();
-
+        $this->flushByFunctionCall('getCarrierRef');
 
 
         // VOIP - Telefonnummern einlesen
-        // Die Telefonnummer die ggf. eingetragen wird kommt aus der Subscriber... weiter unten!!!
-        if (!$this->getSubscriberByCOVID())
-            return false;
-        echo "7 ... getSubscriberByCOVID ... done<br>";
-        flush();
-        ob_flush();
-
+        $this->flushByFunctionCall('getSubscriberByCOVID');
 
 
         // Telefonbucheinträge ermitteln
-        if (!$this->getPhoneBookEntrysByCustomerID())
-           return false;
-
-        echo "8 ... getPhoneBookEntrysByCustomerID ... done<br>";
-        flush();
-        ob_flush();
+        $this->flushByFunctionCall('getPhoneBookEntrysByCustomerID');
 
 
         // Daten in Datei exportieren
         $hExp = new DimariExp($this->globalTarget);
+        $this->flushByFunctionCall('initialDimariExport', $hExp);
 
-        $hExp->initialDimariExport();
-        echo "9 ... initialDimariExport ... done<br>";
+        return true;
+    }
+
+
+
+    private function flushByFunctionCall($getFunction, $hExp=false)
+    {
+
+
+        flush();
+        ob_flush();
+        $this->showStatus($getFunction, 'CALL');
         flush();
         ob_flush();
 
+        $callBy = $this;
+        if ($hExp)
+            $callBy = $hExp;
+
+        // Methode aufrufen
+        if (!$callBy->$getFunction()){
+            $this->showStatus($getFunction, 'FAIL');
+            flush();
+            ob_flush();
+
+            return false;
+        }
+
+        flush();
+        ob_flush();
+        $this->showStatus($getFunction, 'DONE');
+        flush();
+        ob_flush();
+
+        return true;
 
     }
+
+
+
+    private function showStatus($content, $status=false)
+    {
+        // Status ausgeben:
+        print ('<div style="position: fixed; top: 5px; right: 400px; background-color: beige"><table>');
+
+        foreach ($this->myStatusContent as $fieldname=>$value) {
+
+            print ('<tr><td>');
+
+            if ($fieldname == $content){
+                $this->myStatusContent[$fieldname] = $status;
+                $value = $status;
+            }
+            print ($fieldname);
+
+            print ('</td><td style="width: 60px; text-align: center;">');
+            print ($value);
+            print ('</td></tr>');
+        }
+
+        print ('</table></div>');
+    }
+
+
+
 
 
 
