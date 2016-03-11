@@ -46,17 +46,24 @@ class Dimari
 
     private $SET_PHONE_BOOK_ENTRY_IDS = array('10002', '10001');
 
+    private $host;
+    private $username;
+    private $password;
+
 
 
     //private $SET_EXAMPLE_CUSTOMER_ID = '20010190';
     //private $SET_EXAMPLE_CUSTOMER_ID = '20010120';  // Matthias Brumm(!)
     //private $SET_EXAMPLE_CUSTOMER_ID = '20010612';
-     //private $SET_EXAMPLE_CUSTOMER_ID = '20010603';
+    //private $SET_EXAMPLE_CUSTOMER_ID = '20010603';
+    //private $SET_EXAMPLE_CUSTOMER_ID = '20011102';
 
 
-    public function __construct()
+    public function __construct($host, $username, $password)
     {
-
+        $this->host     = $host;
+        $this->username = $username;
+        $this->password = $password;
     }
 
 
@@ -159,9 +166,13 @@ class Dimari
         ob_flush();
 
 
+        // Daten in Datei exportieren
         $hExp = new DimariExp($this->globalTarget);
 
         $hExp->initialDimariExport();
+        echo "9 ... initialDimariExport ... done<br>";
+        flush();
+        ob_flush();
 
 
     }
@@ -918,9 +929,9 @@ class Dimari
     private function createDimariDBConnection()
     {
 
-        $host = '192.168.235.2:E:\variobill\production_tkrz\data\TKRZ_VARIOBILL.FDB';
-        $username = 'SYSDBA';
-        $password = 'Guiffez9';
+        $host = $this->host;
+        $username = $this->username;
+        $password = $this->password;
 
         if (!($dbF=ibase_pconnect($host, $username, $password, 'ISO8859_1', 0, 3)))
             die('Could not connect: ' .  ibase_errmsg());

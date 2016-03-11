@@ -8,12 +8,16 @@
 
 include 'includes/head.php';
 
+// Settings laden
+include 'includes/config.inc.php';
+
+
 // Klasse laden:
 include 'includes/classLoader.php';
 
 
 // KLassen - Objekt erzeugen
-$hDimari = new Dimari();
+$hDimari = new Dimari($host, $username, $password);
 
 
 // Setzte Gruppen-Type auf FTTC bzw. FTTH

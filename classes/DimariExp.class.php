@@ -12,6 +12,9 @@ class DimariExp
 
     public $globalOut = array();        // Vor Auslieferung
     public $globalOut_APPEND = array();
+    public $globalOutEND = array();
+
+    public $CNTSubs;
 
 
     public function __construct($getGlobalTarget)
@@ -26,6 +29,8 @@ class DimariExp
     {
 
         $this->mainToExcel();
+
+        $this->writeToExcel();
 
     }   // END public function initialDimariExport()
 
@@ -107,9 +112,9 @@ class DimariExp
 
 
                                 if (isset($subArray['CARRIER_CODE']))
-                                    $this->globalOut[$numIndex]['VOIP_PORT_AGB_CARRIER']    = $subArray['CARRIER_CODE'];
+                                    $this->globalOut[$numIndex]['VOIP_PORT_ABG_CARRIER']    = $subArray['CARRIER_CODE'];
                                 else
-                                    $this->globalOut[$numIndex]['VOIP_PORT_AGB_CARRIER'] = '';
+                                    $this->globalOut[$numIndex]['VOIP_PORT_ABG_CARRIER'] = '';
 
 
                                 $this->globalOut[$numIndex]['VOIP_PORT_REST_MSN_KUENDIGEN']    = 'unset';
@@ -130,22 +135,34 @@ class DimariExp
 
                                         // echo "...... $numIndex<br>";
 
+                                        // Einträge zählen ... wir müssen später auf 10 kommen...
+                                        $this->CNTSubs++;
+
+
+                                        // Wenn mehr als 3 VOIP Nummern, müssen wir die hinten anhängen
+                                        if ($cntNumbers > 3){
+
+                                            $globalOut = 'globalOutEND';
+                                        }
+                                        else {
+                                            $globalOut = 'globalOut';
+                                        }
 
                                         $curVOIP_ACCOUNT = 'VOIP_ACCOUNT_' . $cntNumbers;
-                                        $this->globalOut[$numIndex][$curVOIP_ACCOUNT]    = $subArray[$curVOIP_ACCOUNT];
+                                        $this->$globalOut[$numIndex][$curVOIP_ACCOUNT]    = $subArray[$curVOIP_ACCOUNT];
 
 
                                         $curVOIP_ACCOUNT_PASSWORT = 'VOIP_ACCOUNT_PASSWORT_' . $cntNumbers;
-                                        $this->globalOut[$numIndex][$curVOIP_ACCOUNT_PASSWORT]    = $subArray[$curVOIP_ACCOUNT_PASSWORT];
+                                        $this->$globalOut[$numIndex][$curVOIP_ACCOUNT_PASSWORT]    = $subArray[$curVOIP_ACCOUNT_PASSWORT];
 
                                         $curVOIP_NATIONAL_VORWAHLT = 'VOIP_NATIONAL_VORWAHLT_' . $cntNumbers;
-                                        $this->globalOut[$numIndex][$curVOIP_NATIONAL_VORWAHLT]    = $subArray[$curVOIP_NATIONAL_VORWAHLT];
+                                        $this->$globalOut[$numIndex][$curVOIP_NATIONAL_VORWAHLT]    = $subArray[$curVOIP_NATIONAL_VORWAHLT];
 
                                         $curVOIP_KOPFNUMMER = 'VOIP_KOPFNUMMER_' . $cntNumbers;
-                                        $this->globalOut[$numIndex][$curVOIP_KOPFNUMMER]    = $subArray[$curVOIP_KOPFNUMMER];
+                                        $this->$globalOut[$numIndex][$curVOIP_KOPFNUMMER]    = $subArray[$curVOIP_KOPFNUMMER];
 
                                         $curVOIP_TRANSACTION_NO = 'VOIP_TRANSACTION_NO_' . $cntNumbers;
-                                        $this->globalOut[$numIndex][$curVOIP_TRANSACTION_NO]    = 'unset';
+                                        $this->$globalOut[$numIndex][$curVOIP_TRANSACTION_NO]    = 'unset';
 
 
 
@@ -164,9 +181,9 @@ class DimariExp
                                         if (isset($subArray['TELEFONBUCHEINTRAG']))
                                             if ( (!isset($this->globalOut_APPEND[$numIndex]['TELEFONBUCHEINTRAG'])) || ($this->globalOut_APPEND[$numIndex]['TELEFONBUCHEINTRAG'] == 'N') )
                                                 $this->globalOut_APPEND[$numIndex]['TELEFONBUCHEINTRAG'] = $subArray['TELEFONBUCHEINTRAG'];
-                                        else
-                                            if (!isset($this->globalOut_APPEND[$numIndex]['TELEFONBUCHEINTRAG']))
-                                                $this->globalOut_APPEND[$numIndex]['TELEFONBUCHEINTRAG']    = '';
+                                            else
+                                                if (!isset($this->globalOut_APPEND[$numIndex]['TELEFONBUCHEINTRAG']))
+                                                    $this->globalOut_APPEND[$numIndex]['TELEFONBUCHEINTRAG']    = '';
 
 
 
@@ -225,7 +242,6 @@ class DimariExp
                                             if (!isset($this->globalOut_APPEND[$numIndex]['TELEBUCH_EINTRAG_ELEKT']))
                                                 $this->globalOut_APPEND[$numIndex]['TELEBUCH_EINTRAG_ELEKT'] = '';
 
-
                                     }
                                 }
 
@@ -236,6 +252,35 @@ class DimariExp
                                         $this->globalOut[$numIndex][$keyname] = $value;
                                     }
                                 }
+
+                                // Ende anhängen?
+                                if (isset($this->globalOutEND[$numIndex])){
+                                    foreach ($this->globalOutEND[$numIndex] as $keyname=>$value){
+                                        $this->globalOut[$numIndex][$keyname] = $value;
+                                    }
+                                }
+
+
+                                // Einträge auf 10 auffüllen
+                                for ($i=$this->CNTSubs; $i <= 10; $i++){
+                                    $curVOIP_ACCOUNT = 'VOIP_ACCOUNT_' . $i;
+                                    $this->globalOut[$numIndex][$curVOIP_ACCOUNT]    = '';
+
+                                    $curVOIP_ACCOUNT_PASSWORT = 'VOIP_ACCOUNT_PASSWORT_' . $i;
+                                    $this->globalOut[$numIndex][$curVOIP_ACCOUNT_PASSWORT]    = '';
+
+                                    $curVOIP_NATIONAL_VORWAHLT = 'VOIP_NATIONAL_VORWAHLT_' . $i;
+                                    $this->globalOut[$numIndex][$curVOIP_NATIONAL_VORWAHLT]    = '';
+
+                                    $curVOIP_KOPFNUMMER = 'VOIP_KOPFNUMMER_' . $i;
+                                    $this->globalOut[$numIndex][$curVOIP_KOPFNUMMER]    = '';
+
+                                    $curVOIP_TRANSACTION_NO = 'VOIP_TRANSACTION_NO_' . $i;
+                                    $this->globalOut[$numIndex][$curVOIP_TRANSACTION_NO]    = 'unset';
+                                }
+
+                                $this->globalOut[$numIndex]['VOIP_ABG_PORT_TERMIN']     = 'unset';
+                                $this->globalOut[$numIndex]['VOIP_ABG_PORT_AUF_CARRIER'] = 'unset';
 
                             }
 
@@ -284,7 +329,7 @@ class DimariExp
                             $this->globalOut[$numIndex]['VOIP_PORTIERUNG']    = 'unset';
 
                             $this->globalOut[$numIndex]['VOIP_PORT_TERMIN']    = '';
-                            $this->globalOut[$numIndex]['VOIP_PORT_AGB_CARRIER'] = '';
+                            $this->globalOut[$numIndex]['VOIP_PORT_ABG_CARRIER'] = '';
                             $this->globalOut[$numIndex]['VOIP_PORT_REST_MSN_KUENDIGEN']    = 'unset';
 
 
@@ -318,6 +363,27 @@ class DimariExp
                             $this->globalOut[$numIndex]['TELEBUCH_SPERRE_INVERS'] = '';
                             $this->globalOut[$numIndex]['TELEBUCH_EINTRAG_ELEKT'] = '';
 
+
+                            for ($i = 3; $i <= 10; $i++){
+                                $curVOIP_ACCOUNT = 'VOIP_ACCOUNT_' . $i;
+                                $this->globalOut[$numIndex][$curVOIP_ACCOUNT]    = '';
+
+                                $curVOIP_ACCOUNT_PASSWORT = 'VOIP_ACCOUNT_PASSWORT_' . $i;
+                                $this->globalOut[$numIndex][$curVOIP_ACCOUNT_PASSWORT]    = '';
+
+                                $curVOIP_NATIONAL_VORWAHLT = 'VOIP_NATIONAL_VORWAHLT_' . $i;
+                                $this->globalOut[$numIndex][$curVOIP_NATIONAL_VORWAHLT]    = '';
+
+                                $curVOIP_KOPFNUMMER = 'VOIP_KOPFNUMMER_' . $i;
+                                $this->globalOut[$numIndex][$curVOIP_KOPFNUMMER]    = '';
+
+                                $curVOIP_TRANSACTION_NO = 'VOIP_TRANSACTION_NO_' . $i;
+                                $this->globalOut[$numIndex][$curVOIP_TRANSACTION_NO]    = 'unset';
+                            }
+
+                            $this->globalOut[$numIndex]['VOIP_ABG_PORT_TERMIN']     = 'unset';
+                            $this->globalOut[$numIndex]['VOIP_ABG_PORT_AUF_CARRIER'] = 'unset';
+
                         }
 
 
@@ -331,9 +397,9 @@ class DimariExp
         }
 
 
-        echo "<pre>";
-        print_r($this->globalOut);
-        echo "</pre><br>";
+//        echo "<pre>";
+//        print_r($this->globalOut);
+//        echo "</pre><br>";
 
     }   // END     private function mainToExcel()
 
@@ -355,139 +421,95 @@ class DimariExp
 
 
 
-
-
-
-    private function fillDefaultExcelSet($numIndex)
+    private function writeToExcel()
     {
-        // $this->globalOut[$numIndex]['KUNDEN_NR']           = $curCustomerID;
-        // $this->globalOut[$numIndex]['DIENST_ART']          = $baseDataArray['DIENST_ART'];
-        // $this->globalOut[$numIndex]['DIENST_BEZEICHNUNG']  = $productArray['DIENST_BEZEICHNUNG'];
-        $this->globalOut[$numIndex]['DIENST_BEMERKUNG']    = '';
-        $this->globalOut[$numIndex]['DATEN_USERNAME']      = 'unset';
-        $this->globalOut[$numIndex]['DATEN_USERPASSWORT']  = 'unset';
-        $this->globalOut[$numIndex]['NAT_BETREIBEREBENE']  = 'N';
-        $this->globalOut[$numIndex]['CLIENT_ID']           = 'unset';
-        $this->globalOut[$numIndex]['USERINFO_ID']         = 'unset';
-        $this->globalOut[$numIndex]['ROUTER_MODELL']    = '';
-        $this->globalOut[$numIndex]['ROUTER_SERIEN_NR']    = '';
-        $this->globalOut[$numIndex]['ACS_ID']    = '';
-        $this->globalOut[$numIndex]['EXT_PRODUKT_ID']    = 'unset';
-        $this->globalOut[$numIndex]['OPTION_1']    = 'unset';
-        $this->globalOut[$numIndex]['OPTION_2']    = 'unset';
-        $this->globalOut[$numIndex]['OPTION_3']    = 'unset';
-        $this->globalOut[$numIndex]['GUELTIG_VON']    = $baseDataArray['GUELTIG_VON'];
-        $this->globalOut[$numIndex]['GUELTIG_BIS']    = $baseDataArray['GUELTIG_BIS'];
-        $this->globalOut[$numIndex]['ERFASST_AM']    = $baseDataArray['ERFASST_AM'];
-        $this->globalOut[$numIndex]['UNTERZEICHNET_AM']    = $baseDataArray['UNTERZEICHNET_AM'];
-        $this->globalOut[$numIndex]['WIDERRUFEN_AM']    = '';
-        $this->globalOut[$numIndex]['GEKUENDIGT_AM']    = '';
-        $this->globalOut[$numIndex]['STANDORT']    = 'unset';
-        $this->globalOut[$numIndex]['INSTALLATIONSTERMIN']    = 'unset';
-        $this->globalOut[$numIndex]['HAUPTVERTEILER']    = 'unset';
-        $this->globalOut[$numIndex]['KABELVERZEIGER']    = 'unset';
-        $this->globalOut[$numIndex]['DOPPELADER_1']    = 'unset';
-        $this->globalOut[$numIndex]['DOPPELADER_2']    = 'unset';
-        $this->globalOut[$numIndex]['VOIP_DIENST_BEZEICHNUNG']    = '';
-        $this->globalOut[$numIndex]['VOIP_EXT_PRODUKT_ID']    = '';
-        $this->globalOut[$numIndex]['SPERRE_0900']    = $productArray['SPERRE_0900'];
-        $this->globalOut[$numIndex]['UEBERMITTLUNG_RUFNR']    = 'J';
-        $this->globalOut[$numIndex]['PURTEL_KUNDENUMMER']    = '';
-        $this->globalOut[$numIndex]['PURTEL_HAUPTANSCHLUSS']    = '';
-        $this->globalOut[$numIndex]['VOIP_SPERRE_AKTIV']    = 'N';
-        $this->globalOut[$numIndex]['VOIP_PORTIERUNG']    = 'unset';
+        $excel = $this->writeToExcelHeadline();
 
-        if (isset($subArray['VOIP_PORT_TERMIN']))
-            $this->globalOut[$numIndex]['VOIP_PORT_TERMIN']    = $subArray['VOIP_PORT_TERMIN'];
-        else
-            $this->globalOut[$numIndex]['VOIP_PORT_TERMIN']    = '';
+        // Durchlauf 0 ... Headline schreiben
+        foreach ($this->globalOut as $cntRow=>$dataArray){
 
+            // echo "Zeile: " . $cntRow . "<br>";
 
-        if (isset($subArray['CARRIER_CODE']))
-            $this->globalOut[$numIndex]['VOIP_PORT_AGB_CARRIER']    = $subArray['CARRIER_CODE'];
-        else
-            $this->globalOut[$numIndex]['VOIP_PORT_AGB_CARRIER'] = '';
+            $leadingPipe = false;
 
+            foreach ($dataArray as $fieldname=>$value){
 
-        $this->globalOut[$numIndex]['VOIP_PORT_REST_MSN_KUENDIGEN']    = 'unset';
+                //echo "Feldname: " . $fieldname . " => Value: " . $value . "<br>";
 
+                // Trennzeichen setzen?
+                if ($leadingPipe)
+                    $excel .= ';';
 
-        $curVOIP_ACCOUNT = 'VOIP_ACCOUNT_' . $cntNumbers;
-        $this->globalOut[$numIndex][$curVOIP_ACCOUNT]    = $subArray[$curVOIP_ACCOUNT];
+                $excel .= '"' . utf8_encode(trim($value)) . '"';
 
+                // Ab jetzt Trennzeichen setzen!
+                $leadingPipe = true;
 
-        $curVOIP_ACCOUNT_PASSWORT = 'VOIP_ACCOUNT_PASSWORT_' . $cntNumbers;
-        $this->globalOut[$numIndex][$curVOIP_ACCOUNT_PASSWORT]    = $subArray[$curVOIP_ACCOUNT_PASSWORT];
+            }
 
-        $curVOIP_NATIONAL_VORWAHLT = 'VOIP_NATIONAL_VORWAHLT_' . $cntNumbers;
-        $this->globalOut[$numIndex][$curVOIP_NATIONAL_VORWAHLT]    = $subArray[$curVOIP_NATIONAL_VORWAHLT];
+            $excel .= "\r\n";
 
-        $curVOIP_KOPFNUMMER = 'VOIP_KOPFNUMMER_' . $cntNumbers;
-        $this->globalOut[$numIndex][$curVOIP_KOPFNUMMER]    = $subArray[$curVOIP_KOPFNUMMER];
+        }
 
-        $curVOIP_TRANSACTION_NO = 'VOIP_TRANSACTION_NO_' . $cntNumbers;
-        $this->globalOut[$numIndex][$curVOIP_TRANSACTION_NO]    = 'unset';
+//        echo "<br><hr>";
+//        echo "<pre>";
+//        print_r($excel);
+//        echo "</pre><br>";
 
-        if (isset($productArray['EGN_VERFREMDUNG']))
-            $this->globalOut[$numIndex]['EGN_VERFREMDUNG']    = $productArray['EGN_VERFREMDUNG'];
-        else
-            $this->globalOut[$numIndex]['EGN_VERFREMDUNG']    = '';
+        // Datei schreiben:
+        $downloadLink = 'DimariDiensteExpFTTC_20160311';
 
+        // '/var/www/html/www/uploads/';
+        $storeFile = 'uploads/' . $downloadLink . '.csv';
 
-        if (isset($subArray['TELEFONBUCHEINTRAG']))
-            $this->globalOut[$numIndex]['TELEFONBUCHEINTRAG']    = $subArray['TELEFONBUCHEINTRAG'];
-        else
-            $this->globalOut[$numIndex]['TELEFONBUCHEINTRAG']    = '';
+        $fp = fopen($storeFile, 'w');
+        fwrite($fp, $excel);
+        fclose($fp);
 
-
-        if (isset($subArray['TELEFONBUCH_NACHNAME']))
-            $this->globalOut[$numIndex]['TELEFONBUCH_NACHNAME']    = $subArray['TELEFONBUCH_NACHNAME'];
-        else
-            $this->globalOut[$numIndex]['TELEFONBUCH_NACHNAME'] = '';
-
-
-        if (isset($subArray['TELEFONBUCH_VORNAME']))
-            $this->globalOut[$numIndex]['TELEFONBUCH_VORNAME']      = $subArray['TELEFONBUCH_VORNAME'];
-        else
-            $this->globalOut[$numIndex]['TELEFONBUCH_VORNAME'] = '';
-
-
-        if (isset($subArray['TELEFONBUCH_STRASSE']))
-            $this->globalOut[$numIndex]['TELEFONBUCH_STRASSE']      = $subArray['TELEFONBUCH_STRASSE'];
-        else
-            $this->globalOut[$numIndex]['TELEFONBUCH_STRASSE'] = '';
-
-
-        if (isset($subArray['TELEFONBUCH_PLZ']))
-            $this->globalOut[$numIndex]['TELEFONBUCH_PLZ']          = $subArray['TELEFONBUCH_PLZ'];
-        else
-            $this->globalOut[$numIndex]['TELEFONBUCH_PLZ'] = '';
-
-
-        if (isset($subArray['TELEFONBUCH_ORT']))
-            $this->globalOut[$numIndex]['TELEFONBUCH_ORT']          = $subArray['TELEFONBUCH_ORT'];
-        else
-            $this->globalOut[$numIndex]['TELEFONBUCH_ORT'] = '';
-
-
-        if (isset($subArray['TELEFONBUCH_FAX']))
-            $this->globalOut[$numIndex]['TELEFONBUCH_FAX']          = $subArray['TELEFONBUCH_FAX'];
-        else
-            $this->globalOut[$numIndex]['TELEFONBUCH_FAX'] = '';
-
-
-        if (isset($subArray['TELEFONBUCH_SPERRE_INVERS']))
-            $this->globalOut[$numIndex]['TELEBUCH_SPERRE_INVERS']    = $subArray['TELEFONBUCH_SPERRE_INVERS'];
-        else
-            $this->globalOut[$numIndex]['TELEBUCH_SPERRE_INVERS'] = '';
-
-
-        if (isset($subArray['TELEFONBUCH_EINTRAG_ELEKT']))
-            $this->globalOut[$numIndex]['TELEBUCH_EINTRAG_ELEKT']    = $subArray['TELEFONBUCH_EINTRAG_ELEKT'];
-        else
-            $this->globalOut[$numIndex]['TELEBUCH_EINTRAG_ELEKT'] = '';
-
+        return true;
     }
+
+
+
+    private function writeToExcelHeadline()
+    {
+        $excel = '';
+
+        // Durchlauf 0 ... Headline schreiben
+        foreach ($this->globalOut as $cntRow=>$dataArray){
+
+            // echo "Zeile: " . $cntRow . "<br>";
+
+            $leadingPipe = false;
+
+            foreach ($dataArray as $fieldname=>$value){
+
+                //echo "Feldname: " . $fieldname . " => Value: " . $value . "<br>";
+
+                // Trennzeichen setzen?
+                if ($leadingPipe)
+                    $excel .= ';';
+
+                $excel .= '"' . utf8_encode(trim($fieldname)) . '"';
+
+                // Ab jetzt Trennzeichen setzen!
+                $leadingPipe = true;
+
+            }
+
+            $excel .= "\r\n";
+
+            break;
+        }
+
+        return $excel;
+    }
+
+
+
+
+
+
 
 
 }
