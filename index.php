@@ -42,12 +42,12 @@ if (isset($hDimari->globalMessage['Status'])){
     print ('</div>');
 }
 
-echo "<pre>";
-echo "<hr>globalTarget<br>";
-print_r($hDimari->globalTarget);
-echo "<hr>";
+//echo "<pre>";
+//echo "<hr>globalTarget<br>";
+//print_r($hDimari->globalTarget);
+//echo "<hr>";
 //print_r($hDimari->globalData);
-echo "</pre><br>";
+//echo "</pre><br>";
 
 
 print ('<div style="position: fixed; bottom: 5px; right: 5px;">DONE</div>');

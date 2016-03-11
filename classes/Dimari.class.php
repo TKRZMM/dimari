@@ -66,7 +66,8 @@ class Dimari
     //private $SET_EXAMPLE_CUSTOMER_ID = '20010120';  // Matthias Brumm(!)
     //private $SET_EXAMPLE_CUSTOMER_ID = '20010612';
     //private $SET_EXAMPLE_CUSTOMER_ID = '20010603';
-    private $SET_EXAMPLE_CUSTOMER_ID = '20010003';
+    // private $SET_EXAMPLE_CUSTOMER_ID = '20010003';
+
 
 
     public function __construct($host, $username, $password)

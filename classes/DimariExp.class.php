@@ -15,6 +15,7 @@ class DimariExp
     public $globalOutEND = array();
 
     public $CNTSubs;
+    public $cntNumberSub;
 
 
     public function __construct($getGlobalTarget)
@@ -46,6 +47,7 @@ class DimariExp
 
         // Durchlauf Customer
         foreach ($this->globalTarget['CUSTOMER_ID'] as $curCustomerID=>$customerArray){
+            $this->CNTSubs = 0;
 
             // echo "CUSTOMER_ID: $curCustomerID<br>";
 
@@ -126,10 +128,13 @@ class DimariExp
                                 // Durchlauf SUBS_ID
                                 if (isset($covArray['SUBS_ID'])){
                                     $cntNumbers = 0;
+                                    $this->cntNumberSub = 0;
+                                    //$this->CNTSubs =0;
                                     foreach ($covArray['SUBS_ID'] as $curSubID=>$subArray){
                                         // echo "Sub_ID_: $curSubID<br>";
 
                                         $cntNumbers++;
+                                        $this->cntNumberSub++;
 
                                         // echo $subArray['SUBSCRIBER_ID'] . "<br><br>";
 
@@ -151,23 +156,38 @@ class DimariExp
                                         }
 
                                         $curVOIP_ACCOUNT = 'VOIP_ACCOUNT_' . $cntNumbers;
-                                        $this->$globalOut[$numIndex][$curVOIP_ACCOUNT]    = $subArray[$curVOIP_ACCOUNT];
-
-
+                                        if (isset($subArray[$curVOIP_ACCOUNT]))
+                                            $this->$globalOut[$numIndex][$curVOIP_ACCOUNT]    = $subArray[$curVOIP_ACCOUNT];
+                                        else
+                                            $this->$globalOut[$numIndex][$curVOIP_ACCOUNT]    = '';
 
 
                                         $curVOIP_ACCOUNT_PASSWORT = 'VOIP_ACCOUNT_PASSWORT_' . $cntNumbers;
-                                        $this->$globalOut[$numIndex][$curVOIP_ACCOUNT_PASSWORT]    = $subArray[$curVOIP_ACCOUNT_PASSWORT];
+                                        if (isset($subArray[$curVOIP_ACCOUNT_PASSWORT]))
+                                            $this->$globalOut[$numIndex][$curVOIP_ACCOUNT_PASSWORT]    = $subArray[$curVOIP_ACCOUNT_PASSWORT];
+                                        else
+                                            $this->$globalOut[$numIndex][$curVOIP_ACCOUNT_PASSWORT] = '';
+
 
                                         $curVOIP_NATIONAL_VORWAHLT = 'VOIP_NATIONAL_VORWAHLT_' . $cntNumbers;
-                                        $this->$globalOut[$numIndex][$curVOIP_NATIONAL_VORWAHLT]    = $subArray[$curVOIP_NATIONAL_VORWAHLT];
+                                        if (isset($subArray[$curVOIP_NATIONAL_VORWAHLT]))
+                                            $this->$globalOut[$numIndex][$curVOIP_NATIONAL_VORWAHLT]    = $subArray[$curVOIP_NATIONAL_VORWAHLT];
+                                        else
+                                            $this->$globalOut[$numIndex][$curVOIP_NATIONAL_VORWAHLT] = '';
+
 
                                         $curVOIP_KOPFNUMMER = 'VOIP_KOPFNUMMER_' . $cntNumbers;
-                                        $this->$globalOut[$numIndex][$curVOIP_KOPFNUMMER]    = $subArray[$curVOIP_KOPFNUMMER];
+                                        if (isset($subArray[$curVOIP_KOPFNUMMER]))
+                                            $this->$globalOut[$numIndex][$curVOIP_KOPFNUMMER]    = $subArray[$curVOIP_KOPFNUMMER];
+                                        else
+                                            $this->$globalOut[$numIndex][$curVOIP_KOPFNUMMER] = '';
+
 
                                         $curVOIP_TRANSACTION_NO = 'VOIP_TRANSACTION_NO_' . $cntNumbers;
-                                        $this->$globalOut[$numIndex][$curVOIP_TRANSACTION_NO]    = 'unset';
-
+                                        if (isset($subArray[$curVOIP_ACCOUNT]))
+                                            $this->$globalOut[$numIndex][$curVOIP_TRANSACTION_NO]    = 'unset';
+                                        else
+                                            $this->$globalOut[$numIndex][$curVOIP_TRANSACTION_NO] = '';
 
 
 
@@ -251,7 +271,7 @@ class DimariExp
 
 
                                 // Auf 3 füllen?
-                                $x = $this->CNTSubs + 1;
+                                $x = $this->cntNumberSub + 1;
                                 for ($i = $x; $i <= 3; $i++){
                                     $curVOIP_ACCOUNT = 'VOIP_ACCOUNT_' . $i;
                                     $this->globalOut[$numIndex][$curVOIP_ACCOUNT]    = '';
@@ -288,7 +308,7 @@ class DimariExp
 
 
                                 // Einträge auf 10 auffüllen
-                                $x = $this->CNTSubs + 1;
+                                $x = $this->cntNumberSub + 1;
                                 for ($i=$x; $i <= 10; $i++){
                                     $curVOIP_ACCOUNT = 'VOIP_ACCOUNT_' . $i;
                                     $this->globalOut[$numIndex][$curVOIP_ACCOUNT]    = '';
