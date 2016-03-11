@@ -471,9 +471,9 @@ class DimariExp
     {
         $excel = $this->writeToExcelHeadline();
 
-        echo "<pre>";
-        print_r($this->globalOut);
-        echo "</pre><br>";
+//        echo "<pre>";
+//        print_r($this->globalOut);
+//        echo "</pre><br>";
 
         // Durchlauf 0 ... Headline schreiben
         foreach ($this->globalOut as $cntRow=>$dataArray){
