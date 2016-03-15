@@ -33,6 +33,18 @@
             height:100%;
         }
 
+        table {
+            border-collapse: collapse;
+            padding: 10px;
+            margin: 10px;
+        }
+
+
+
+        .bottomLine {
+            border-bottom: solid 1px olivedrab;
+        }
+
     </style>
 </head>
 <body>

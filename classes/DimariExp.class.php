@@ -17,6 +17,9 @@ class DimariExp
     public $CNTSubs;
     public $cntNumberSub;
 
+    // Vor Excel Formatierung auf den Monitor ausgeben?
+    private $PRE_EXCEL_TO_SCREEN = 'yes';
+
 
     public function __construct($getGlobalTarget)
     {
@@ -471,9 +474,12 @@ class DimariExp
     {
         $excel = $this->writeToExcelHeadline();
 
-//        echo "<pre>";
-//        print_r($this->globalOut);
-//        echo "</pre><br>";
+        if ($this->PRE_EXCEL_TO_SCREEN == 'yes')
+        {
+            echo "<pre>";
+            print_r($this->globalOut);
+            echo "</pre><br>";
+        }
 
         // Durchlauf 0 ... Headline schreiben
         foreach ($this->globalOut as $cntRow=>$dataArray){

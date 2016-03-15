@@ -20,9 +20,11 @@ include 'includes/classLoader.php';
 $hDimari = new Dimari($host, $username, $password);
 
 
+
+
 // Setzte Gruppen-Type auf FTTC bzw. FTTH
-$hDimari->getGroupType = 'FTTC';
-$hDimari->getAccountType  = 'FTTC';
+$hDimari->setExportType = 'FTTC';
+
 
 
 // Initial Methode aufrufen:
@@ -33,21 +35,14 @@ $hDimari->initialGetFTTCServices();
 
 
 
-// Status ausgeben:
-if (isset($hDimari->globalMessage['Status'])){
-    print ('<div style="position: fixed; top: 5px; right: 5px; background-color: beige">STATUS:<br>');
-    foreach ($hDimari->globalMessage['Status'] as $index=>$statusInfo){
-        print ('&nbsp;# ' . $index . ' > ' .  $statusInfo . "&nbsp;<br>");
-    }
-    print ('</div>');
-}
+// Debug ausgeben:
 
-//echo "<pre>";
+echo "<pre>";
 //echo "<hr>globalTarget<br>";
 //print_r($hDimari->globalTarget);
 //echo "<hr>";
-//print_r($hDimari->globalData);
-//echo "</pre><br>";
+print_r($hDimari->globalData);
+echo "</pre><br>";
 
 
 print ('<div style="position: fixed; bottom: 5px; right: 5px;">DONE</div>');
