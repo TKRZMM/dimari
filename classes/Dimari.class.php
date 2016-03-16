@@ -106,7 +106,11 @@ class Dimari
 
 
 
-    //private $onlyExampleCustomerID = '20010914';
+    // PurTel Kunde
+    //private $onlyExampleCustomerID = '20010686';
+
+    // Tester
+    //private $onlyExampleCustomerID = '20010603';
 
 
 
@@ -239,9 +243,22 @@ class Dimari
         $this->flushByFunctionCall('getDataFromExcelPhone');
 
 
-        echo "<pre>";
-        print_r($this->globalData);
-        echo "</pre><br>";
+        // Transaction-Daten aus Excelliste holen
+        $this->flushByFunctionCall('getDataFromExcelTransaction');
+
+
+
+        // Letze Vorbereitung der Daten
+        $this->flushByFunctionCall('preWriteToFiel');
+
+
+        // Schreibe Daten in Excel-Datei
+        $this->flushByFunctionCall('writeToExcel');
+
+
+//        echo "<pre>";
+//        print_r($this->globalData);
+//        echo "</pre><br>";
 
 
         $this->outNow('Ende', '', 'Info');
@@ -252,6 +269,68 @@ class Dimari
 
 
 
+
+
+
+
+
+
+    // Transaction-Daten aus Excelliste holen
+    private function getDataFromExcelTransaction()
+    {
+
+        $myData = array();
+
+        // Lese .csv - Datei ein
+        $filepath = 'uploads/ParseMeTransaction.csv';
+        $myData = $this->readDataFromExcelPhone($filepath);
+
+//        echo "<pre>";
+//        print_r($myData);
+//        echo "</pre><br>";
+
+
+
+        // Durchlauf Customer
+        foreach ($this->globalData as $preCurCustomerID => $mainCustomerArray){
+
+
+            foreach ($mainCustomerArray['CUSTOMER_ID'] as $curCustomerID => $customerArray){
+
+
+                // Puretel Kunde?
+                if ( (isset($customerArray['VOIP_ACCOUNT_1_FROM_PURETEL'])) && ($customerArray['VOIP_ACCOUNT_1_FROM_PURETEL'] == 'yes') ){
+
+
+                    if (isset($customerArray['VOIP_ACCOUNT_1'])){
+
+                        $curMatcher = $customerArray['VOIP_ACCOUNT_1'];
+
+                        // Durchlauf csv-Daten
+                        foreach ($myData as $index => $valArray){
+
+                            if ($curMatcher == $valArray[0]) {
+
+                                // VOIP_TRANSACTION_NO_1
+                                $this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_TRANSACTION_NO_1'] = $valArray[1];
+
+                                // ??? break;
+                            }
+
+                        }
+
+                    }
+                }
+
+                // $this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_ACCOUNT_1_FROM_PURETEL']
+
+            }
+
+        }
+
+        return true;
+
+    }   // END // Transaction-Daten aus Excelliste holen
 
 
 
@@ -300,6 +379,22 @@ class Dimari
 
 
 
+                // VOIP_ACCOUNT_1
+                if (strlen($dataSetArray[15]) > 0){
+
+                    $curVOIP_ACCOUNT_1 = trim($dataSetArray[15]);
+
+                    // Setze VOIP_ACCOUNT_1
+                    $this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_ACCOUNT_1'] = $curVOIP_ACCOUNT_1;
+
+                    // Flagge mir den Eintrag als Puretel - Kunde
+                    $this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_ACCOUNT_1_FROM_PURETEL'] = 'yes';
+
+                }   // END // HAUPTVERTEILER
+
+
+
+
 
                 // VOIP Kopfnummer und Vorwahl
                 if (strlen($dataSetArray[16]) > 0){
@@ -329,8 +424,60 @@ class Dimari
                         $this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_NATIONAL_VORWAHL_1'] = $curVOIP_NATIONAL_VORWAHL_1;
                     }
 
-
                 }   // END VOIP Kopfnummer und Vorwahl
+
+
+
+
+                // HAUPTVERTEILER
+                if (strlen($dataSetArray[9]) > 0){
+
+                    $curHAUPTVERTEILER = trim($dataSetArray[9]);
+
+                    // Setze HAUPTVERTEILER
+                    $this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['HAUPTVERTEILER'] = $curHAUPTVERTEILER;
+
+                }   // END // HAUPTVERTEILER
+
+
+
+
+                // KABELVERZWEIGER
+                if (strlen($dataSetArray[7]) > 0){
+
+                    $curKABELVERZWEIGER = trim($dataSetArray[7]);
+
+                    // Setze KABELVERZWEIGER
+                    $this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['KABELVERZWEIGER'] = $curKABELVERZWEIGER;
+
+                }   // END // KABELVERZWEIGER
+
+
+
+
+                // DOPPELADER_1
+                if (strlen($dataSetArray[10]) > 0){
+
+                    $curDOPPELADER_1 = trim($dataSetArray[10]);
+
+                    // Setze KABELVERZWEIGER
+                    $this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['DOPPELADER_1'] = $curDOPPELADER_1;
+
+                }   // END // KABELVERZWEIGER
+
+
+
+                // DSLAM_PORT
+                if (strlen($dataSetArray[11]) > 0){
+
+                    $curDSLAM_PORT = trim($dataSetArray[11]);
+
+                    // Setze KABELVERZWEIGER
+                    $this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['DSLAM_PORT'] = $curDSLAM_PORT;
+
+                }   // END // KABELVERZWEIGER
+
+
 
 
             }   // END // Haben wir eine mögliche Kundennummer?
@@ -338,14 +485,16 @@ class Dimari
         }   // END // Durchlauf der Zeilen
 
 
-
-        echo "<pre>";
-        print_r($myData);
-        echo "</pre><br>";
+//
+//        echo "<pre>";
+//        print_r($myData);
+//        echo "</pre><br>";
 
         return true;
 
     }   // END private function getDataFromExcelPhone()
+
+
 
 
 

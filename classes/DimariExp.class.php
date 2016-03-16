@@ -53,6 +53,262 @@ class DimariExp extends Dimari
 
 
 
+
+
+
+
+    public function writeToExcel()
+    {
+        $excel = $this->writeToExcelHeadline();
+
+        // Durchlauf 0 ... Headline schreiben
+        foreach ($this->globalOut as $cntRow=>$dataArray){
+
+            // echo "Zeile: " . $cntRow . "<br>";
+
+            $leadingPipe = false;
+
+            foreach ($dataArray as $fieldname=>$value){
+
+                //echo "Feldname: " . $fieldname . " => Value: " . $value . "<br>";
+
+                // Trennzeichen setzen?
+                if ($leadingPipe)
+                    $excel .= ';';
+
+                $excel .= '"' . utf8_encode(trim($value)) . '"';
+
+                // Ab jetzt Trennzeichen setzen!
+                $leadingPipe = true;
+
+            }
+
+            $excel .= "\r\n";
+
+        }
+
+//        echo "<br><hr>";
+//        echo "<pre>";
+//        print_r($excel);
+//        echo "</pre><br>";
+
+        // Datei schreiben:
+        $downloadLink = 'DimariDiensteExpFTTC_20160316';
+
+        // '/var/www/html/www/uploads/';
+        $storeFile = 'uploads/' . $downloadLink . '.csv';
+
+        $fp = fopen($storeFile, 'w');
+        fwrite($fp, $excel);
+        fclose($fp);
+
+        return true;
+    }
+
+
+
+    public function writeToExcelHeadline()
+    {
+        $excel = '';
+
+        // Durchlauf 0 ... Headline schreiben
+        foreach ($this->globalOut as $cntRow=>$dataArray){
+
+            // echo "Zeile: " . $cntRow . "<br>";
+
+            $leadingPipe = false;
+
+            foreach ($dataArray as $fieldname=>$value){
+
+                //echo "Feldname: " . $fieldname . " => Value: " . $value . "<br>";
+
+                // Trennzeichen setzen?
+                if ($leadingPipe)
+                    $excel .= ';';
+
+                $excel .= '"' . utf8_encode(trim($fieldname)) . '"';
+
+                // Ab jetzt Trennzeichen setzen!
+                $leadingPipe = true;
+
+            }
+
+            $excel .= "\r\n";
+
+            break;
+        }
+
+        return $excel;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // Daten für Exort bzw. zum Dateischreiben aufbereiten
+    public function preWriteToFiel()
+    {
+
+
+        $cntRowEntry = 0;
+
+        $exp = array();
+
+        // Haupt - Durchlauf
+        foreach ($this->globalData as $preCurCustomerID => $mainCustomerArray){
+
+
+            // Durchlauf Customer
+            foreach ($mainCustomerArray['CUSTOMER_ID'] as $curCustomerID => $customerArray){
+                if (isset($customerArray['KUNDEN_NR'])){
+
+
+                    // DATEN EBENE
+
+                    $cntRowEntry++;
+
+                    // FORMAT: $exp[$cntRowEntry]['KUNDEN_NR'] = $customerArray['KUNDEN_NR'];
+                    $this->addExp($customerArray, 'KUNDEN_NR', $exp, $cntRowEntry);                 // 1
+                    $this->addExp($customerArray, 'DIENST_ART', $exp, $cntRowEntry);                // 2
+                    $this->addExp($customerArray, 'DIENST_BEZEICHNUNG', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'DIENST_BEMERKUNG', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'DATEN_USERNAME', $exp, $cntRowEntry);            // 5
+                    $this->addExp($customerArray, 'DATEN_USERPASSWORT', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'NAT_BETREIBEREBENE', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'CLIENT_ID', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'USERINFO_ID', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'ROUTER_MODELL', $exp, $cntRowEntry);             // 10
+                    $this->addExp($customerArray, 'ROUTER_SERIEN_NR', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'ACS_ID', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'EXT_PRODUKT_ID', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'OPTION_1', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'OPTION_2', $exp, $cntRowEntry);                  // 15
+                    $this->addExp($customerArray, 'OPTION_3', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'GUELTIG_VON', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'GUELTIG_BIS', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'ERFASST_AM', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'UNTERZEICHNET_AM', $exp, $cntRowEntry);              // 20
+                    $this->addExp($customerArray, 'WIDERRUFEN_AM', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'GEKUENDIGT_AM', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'STANDORT', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'INSTALLATIONSTERMIN', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'HAUPTVERTEILER', $exp, $cntRowEntry);                // 25
+                    $this->addExp($customerArray, 'KABELVERZWEIGER', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'DOPPELADER_1', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'DOPPELADER_2', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'VOIP_DIENST_BEZEICHNUNG', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'VOIP_DIENST_BEMERKUNG', $exp, $cntRowEntry);         // 30
+                    $this->addExp($customerArray, 'VOIP_EXT_PRODUKT_ID', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'SPERRE_0900', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'UEBERMITTLUNG_RUFNR', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'PURTEL_KUNDENNUMMER', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'PURTEL_HAUPTANSCHLUSS', $exp, $cntRowEntry);         // 35
+                    $this->addExp($customerArray, 'VOIP_SPERRE_AKTIV', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'VOIP_PORTIERUNG', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'VOIP_PORT_TERMIN', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'VOIP_PORT_ABG_CARRIER', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'VOIP_PORT_REST_MSN_KUENDIGEN', $exp, $cntRowEntry);  // 40
+
+                    for ($i = 1; $i <=3; $i++){
+                        $this->addExp($customerArray, 'VOIP_ACCOUNT_'.$i, $exp, $cntRowEntry);
+                        $this->addExp($customerArray, 'VOIP_ACCOUNT_PASSWORT_'.$i, $exp, $cntRowEntry);
+                        $this->addExp($customerArray, 'VOIP_NATIONAL_VORWAHL_'.$i, $exp, $cntRowEntry);
+                        $this->addExp($customerArray, 'VOIP_KOPFNUMMER_'.$i, $exp, $cntRowEntry);
+                        $this->addExp($customerArray, 'VOIP_TRANSACTION_NO_'.$i, $exp, $cntRowEntry);
+                    }
+
+                    $this->addExp($customerArray, 'EGN_VERFREMDUNG', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'TELEFONBUCHEINTRAG', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'TELEBUCH_NACHNAME', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'TELEBUCH_VORNAME', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'TELEBUCH_STRASSE', $exp, $cntRowEntry);    // 60
+                    $this->addExp($customerArray, 'TELEBUCH_PLZ', $exp, $cntRowEntry);
+
+                    $this->addExp($customerArray, 'TELEBUCH_ORT', $exp, $cntRowEntry);  // 64 (!)
+                    $this->addExp($customerArray, 'TELEBUCH_TEL', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'TELEBUCH_FAX', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'TELEBUCH_SPERRE_INVERS', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'TELEBUCH_EINTRAG_ELEKT', $exp, $cntRowEntry);
+
+                    for ($i = 4; $i <=10; $i++){
+                        $this->addExp($customerArray, 'VOIP_ACCOUNT_'.$i, $exp, $cntRowEntry);
+                        $this->addExp($customerArray, 'VOIP_ACCOUNT_PASSWORT_'.$i, $exp, $cntRowEntry);
+                        $this->addExp($customerArray, 'VOIP_NATIONAL_VORWAHL_'.$i, $exp, $cntRowEntry);
+                        $this->addExp($customerArray, 'VOIP_KOPFNUMMER_'.$i, $exp, $cntRowEntry);
+                        $this->addExp($customerArray, 'VOIP_TRANSACTION_NO_'.$i, $exp, $cntRowEntry);
+                    }
+
+                    $this->addExp($customerArray, 'VOIP_ABG_PORT_TERMIN', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'VOIP_ABG_PORT_AUF_CARRIER', $exp, $cntRowEntry);
+                    $this->addExp($customerArray, 'DSLAM_PORT', $exp, $cntRowEntry);
+
+                }
+            }   // END // Durchlauf Customer
+
+
+
+        } // END // Haupt - Durchlauf
+
+
+//        echo "<pre>";
+//        print_r($this->globalData);
+//        print_r($exp);
+//        echo "</pre><br>";
+
+        $this->globalOut = '';
+        $this->globalOut = $exp;
+
+        return true;
+
+    }   // END public function preWriteToFiel()
+
+
+
+
+
+
+
+    // Fügt Daten an das Ausgabe Array an
+    private function addExp($customerArray, $fieldname, & $exp, $cntRowEntry)
+    {
+
+        if (isset($customerArray[$fieldname]))
+            $exp[$cntRowEntry][$fieldname] = $customerArray[$fieldname];
+        else
+            $exp[$cntRowEntry][$fieldname] = '';
+
+        return true;
+
+    } // END private function addExp()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     // Haupt - Methode für den Excelexport
     public function mainToExcel()
     {
@@ -274,23 +530,10 @@ class DimariExp extends Dimari
                                             if (!isset($curDataSet['CUSTOMER_ID'][$curCustomerID]['TELEFONBUCH_NACHNAME'])){
 
 
-                                                // TELEBUCH_NACHNAME
                                                 $this->addDataToDataSetBySubsIDArray($curDataSet, $curCustomerID, $subsIDArray, 'TELEBUCH_NACHNAME');
-
-
-                                                // TELEBUCH_VORNAME
                                                 $this->addDataToDataSetBySubsIDArray($curDataSet, $curCustomerID, $subsIDArray, 'TELEBUCH_VORNAME');
-
-
-                                                // TELEBUCH_STRASSE
                                                 $this->addDataToDataSetBySubsIDArray($curDataSet, $curCustomerID, $subsIDArray, 'TELEBUCH_STRASSE');
-
-
-                                                // TELEBUCH_PLZ
                                                 $this->addDataToDataSetBySubsIDArray($curDataSet, $curCustomerID, $subsIDArray, 'TELEBUCH_PLZ');
-
-
-                                                // TELEBUCH_ORT
                                                 $this->addDataToDataSetBySubsIDArray($curDataSet, $curCustomerID, $subsIDArray, 'TELEBUCH_ORT');
 
 
@@ -299,15 +542,8 @@ class DimariExp extends Dimari
                                                 $curDataSet['CUSTOMER_ID'][$curCustomerID]['TELEBUCH_TEL'] = $myNum;
 
 
-                                                // TELEBUCH_FAX
                                                 $this->addDataToDataSetBySubsIDArray($curDataSet, $curCustomerID, $subsIDArray, 'TELEBUCH_FAX');
-
-
-                                                // TELEBUCH_SPERRE_INVERS
                                                 $this->addDataToDataSetBySubsIDArray($curDataSet, $curCustomerID, $subsIDArray, 'TELEBUCH_SPERRE_INVERS');
-
-
-                                                // TELEBUCH_EINTRAG_ELEKT
                                                 $this->addDataToDataSetBySubsIDArray($curDataSet, $curCustomerID, $subsIDArray, 'TELEBUCH_EINTRAG_ELEKT');
 
                                             }
@@ -430,7 +666,7 @@ class DimariExp extends Dimari
         $curDataSet['CUSTOMER_ID'][$curCustomerID]['WIDERRUFEN_AM'] = '';
 
         // GEKUENDIGT_AM
-        $curDataSet['CUSTOMER_ID'][$curCustomerID]['WIDERRUFEN_AM'] = '';
+        $curDataSet['CUSTOMER_ID'][$curCustomerID]['GEKUENDIGT_AM'] = '';
 
 
         // SPERRE_0900 ... laut L. Koschin immer sperren
@@ -442,17 +678,16 @@ class DimariExp extends Dimari
         // VOIP_SPERRE_AKTIV ... laut L. Koschin nie
         $curDataSet['CUSTOMER_ID'][$curCustomerID]['VOIP_SPERRE_AKTIV'] = 'N';
 
+        // VOIP_PORT_REST_MSN_KUENDIGEN ... laut S. Reimann Default N belassen
+        $curDataSet['CUSTOMER_ID'][$curCustomerID]['VOIP_PORT_REST_MSN_KUENDIGEN'] = 'N';
 
-//        $curDataSet['CUSTOMER_ID'][$curCustomerID]['xxx'] = '';
-//        $curDataSet['CUSTOMER_ID'][$curCustomerID]['xxx'] = '';
-//        $curDataSet['CUSTOMER_ID'][$curCustomerID]['xxx'] = '';
-//        $curDataSet['CUSTOMER_ID'][$curCustomerID]['xxx'] = '';
-//        $curDataSet['CUSTOMER_ID'][$curCustomerID]['xxx'] = '';
-//        $curDataSet['CUSTOMER_ID'][$curCustomerID]['xxx'] = '';
-//        $curDataSet['CUSTOMER_ID'][$curCustomerID]['xxx'] = '';
-//        $curDataSet['CUSTOMER_ID'][$curCustomerID]['xxx'] = '';
-//        $curDataSet['CUSTOMER_ID'][$curCustomerID]['xxx'] = '';
+        // TODO hier ist manuelles nacharbeiten nötig
+        // VOIP_ABG_PORT_TERMIN ... laut S. Reimann später und von Hand blocken
+        $curDataSet['CUSTOMER_ID'][$curCustomerID]['VOIP_ABG_PORT_TERMIN'] = '';
 
+        // TODO hier ist manuelles nacharbeiten nötig
+        // VOIP_ABG_PORT_TERMIN ... laut S. Reimann später und von Hand blocken
+        $curDataSet['CUSTOMER_ID'][$curCustomerID]['VOIP_ABG_PORT_AUF_CARRIER'] = '';
 
         return true;
 
@@ -501,7 +736,7 @@ class DimariExp extends Dimari
         else
             $curName = $productArray['PRODUCT_Name'];
 
-        $curDataSet['CUSTOMER_ID'][$curCustomerID]['DIENST_BEZZEICHNUNG']   = $curName;
+        $curDataSet['CUSTOMER_ID'][$curCustomerID]['DIENST_BEZEICHNUNG']   = $curName;
         $curDataSet['CUSTOMER_ID'][$curCustomerID]['DIENST_BEMERKUNG']      = '';
 
 
