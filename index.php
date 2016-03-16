@@ -17,7 +17,8 @@ include 'includes/classLoader.php';
 
 
 // KLassen - Objekt erzeugen
-$hDimari = new Dimari($host, $username, $password);
+// $hDimari = new Dimari($host, $username, $password);
+$hDimari = new DimariExp($host, $username, $password, $hostRadi, $usernameRadi, $passwordRadi);
 
 
 
@@ -37,12 +38,12 @@ $hDimari->initialGetFTTCServices();
 
 // Debug ausgeben:
 
-echo "<pre>";
+//echo "<pre>";
 //echo "<hr>globalTarget<br>";
 //print_r($hDimari->globalTarget);
 //echo "<hr>";
-print_r($hDimari->globalData);
-echo "</pre><br>";
+//print_r($hDimari->globalData);
+//echo "</pre><br>";
 
 
 print ('<div style="position: fixed; bottom: 5px; right: 5px;">DONE</div>');

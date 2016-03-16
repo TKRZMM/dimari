@@ -14,7 +14,7 @@ class Dimari
     // Customer einlesen die in der Customer Gruppe ... sind
     // Tabelle: CUSTOMER_GROUP
     // Feld:    GROUP_ID
-    private $setCustomerByGroupID = array('FTTC' => array('100011'),
+    public $setCustomerByGroupID = array('FTTC' => array('100011'),
                                             'FTTH' => array()
                                             );
 
@@ -23,7 +23,7 @@ class Dimari
     // Customer einlesen die NICHT StatusID x haben
     // Tabelle: CUSTOMER_STATUS
     // Feld:    STATUS_ID
-    private $setNoCustomerInStatusID = array('FTTC' => array(),
+    public $setNoCustomerInStatusID = array('FTTC' => array(),
                                                 'FTTH' => array()
                                                     );
 //    private $etNoCustomerInStatusID = array('FTTC' => array('10004', '2'),
@@ -32,22 +32,27 @@ class Dimari
 
 
     // Nummern für Produkte die für Internet wichtig sind ... u.a. nur diese Daten werden gezogen
-    private $setProductIDForInternet = array ('FTTC' => array('10070','10059',),
+    public $setProductIDForInternet = array ('FTTC' => array('10070','10059',),
                                             'FTTH' => array()
                                             );
 
     // Nummern für Produkte die für VOIP wichtig sind ... u.a. nur diese Daten werden gezogen
-    private $setProductIDForVOIP = array ('FTTC' => array('10033','10004',),
+    public $setProductIDForVOIP = array ('FTTC' => array('10033','10004',),
                                             'FTTH' => array()
                                             );
 
+    // Ext Produkt ID der Dienste
+    public $setExtProdServiceID = array ('setProductIDForVOIP' => '771',
+                                        'setProductIDForInternet' => '770'
+                                        );
+
 
     // Telefonbuch IDs die gesetzt werden können
-    private $setPhoneBookIDs = array('10002', '10001');
+    public $setPhoneBookIDs = array('10002', '10001');
 
 
     // Message Handler
-    private $myMessage = array('Info' => array(),
+    public $myMessage = array('Info' => array(),
                                 'Runtime' => array()
                                );
 
@@ -71,6 +76,9 @@ class Dimari
     private $myHost;
     private $myUsername;
     private $myPassword;
+    private $hostRadi;
+    private $usernameRadi;
+    private $passwordRadi;
 
     // Datenbank Object
     private $dbF;
@@ -78,22 +86,22 @@ class Dimari
 
 
     // Kunden ohne Vertrag aber aktiv (Details) ausgeben?
-    private $setFTTHtoFTTCWrongCustomerOnScreen = 'no';
+    public $setFTTHtoFTTCWrongCustomerOnScreen = 'no';
 
 
 
     // Falsch zugewiesene FTTH zu FTTC Kunden (Details) ausgeben?
-    private $setNoContractCustomerOnScreen = 'no';
+    public $setNoContractCustomerOnScreen = 'no';
 
 
     // Kunden die keine VOIP Daten haben... sie aber haben müssten ... Purtel-Kunden möglich!!!
-    private $setNoVOIPDataOnScreen = 'no';
+    public $setNoVOIPDataOnScreen = 'no';
 
 
 
     // Wie viele Customer sollen eingelesen werden?
     // 0 für keine Einschränkung beim Limit
-    private $setReadLimitCustomer = 0;
+    public $setReadLimitCustomer = 0;
 
 
 
@@ -125,11 +133,16 @@ class Dimari
 
 
     // Klassen - Konstruktor
-    public function __construct($host, $username, $password)
+    public function __construct($host, $username, $password, $hostRadi, $usernameRadi, $passwordRadi)
     {
         $this->myHost     = $host;
         $this->myUsername = $username;
         $this->myPassword = $password;
+
+        $this->hostRadi     = $hostRadi;
+        $this->usernameRadi = $usernameRadi;
+        $this->passwordRadi = $passwordRadi;
+
     }   // END public function __construct(...)
 
 
@@ -209,10 +222,26 @@ class Dimari
 
 
 
+        // Daten erste Aufbereitung
+        $this->flushByFunctionCall('initialDimariExport');
 
-//        echo "<pre>";
-//        print_r($this->myMessage);
-//        echo "</pre><br>";
+
+
+        // Customer Vorname - Nachname einlesen
+        $this->flushByFunctionCall('getNamesFromCustomer');
+
+
+        // Daten aus Radius Server holen
+        $this->flushByFunctionCall('getDataFromRadiusServer');
+
+
+        // Telefon-Daten aus Excelliste holen
+        $this->flushByFunctionCall('getDataFromExcelPhone');
+
+
+        echo "<pre>";
+        print_r($this->globalData);
+        echo "</pre><br>";
 
 
         $this->outNow('Ende', '', 'Info');
@@ -227,6 +256,349 @@ class Dimari
 
 
 
+
+
+
+
+
+
+
+
+    // Telefon-Daten aus Excelliste holen
+    private function getDataFromExcelPhone()
+    {
+
+        $myData = array();
+
+        // Lese .csv - Datei ein
+        $filepath = 'uploads/ParseMe.csv';
+        $myData = $this->readDataFromExcelPhone($filepath);
+
+
+        // Durchlauf der Zeilen
+        foreach ($myData as $index=>$dataSetArray){
+
+            $tryCustomerID = trim($dataSetArray[0]);
+
+            $search = '/^(\d)+$/';
+
+            // Haben wir eine mögliche Kundennummer?
+            if (preg_match($search, $tryCustomerID)){
+
+                $curCustomerID = trim($dataSetArray[0]);
+
+                // VOIP_PORTIERUNG updaten?
+                if (strlen($dataSetArray[14]) > 0){
+                    if (isset($this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_PORTIERUNG'])){
+                        if ($this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_PORTIERUNG'] == 'N'){
+
+                            // Setze aktuellen und richtigen Status
+                            $this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_PORTIERUNG'] = 'J';
+                        }
+                    }
+                }   // END // VOIP_PORTIERUNG updaten?
+
+
+
+
+                // VOIP Kopfnummer und Vorwahl
+                if (strlen($dataSetArray[16]) > 0){
+
+                    $tmpFullNumber = trim($dataSetArray[16]);
+
+                    // Gültige Telefonnumer?
+                    $search = '/^(\d)+$/';
+
+                    // Haben wir eine mögliche Kundennummer?
+                    if (preg_match($search, $tmpFullNumber)){
+
+                        // Erste 5 = Vowahl
+                        // Rest = Kopfnummer
+
+                        $curVOIP_NATIONAL_VORWAHL_1 = substr($tmpFullNumber, 0, 4);
+                        $tmp = $curVOIP_NATIONAL_VORWAHL_1;
+                        $curVOIP_NATIONAL_VORWAHL_1 = '0' . $tmp;
+                        $curVOIP_KOPFNUMMER_1 = substr($tmpFullNumber, 4);
+
+                        // echo "$curCustomerID ... $tmpFullNumber => $curVOIP_NATIONAL_VORWAHL_1 => $curVOIP_KOPFNUMMER_1<br>";
+
+                        // Setze VOIP_KOPFNUMMER_1
+                        $this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_KOPFNUMMER_1'] = $curVOIP_KOPFNUMMER_1;
+
+                        // Setze VOIP_NATIONAL_VORWAHL_1
+                        $this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_NATIONAL_VORWAHL_1'] = $curVOIP_NATIONAL_VORWAHL_1;
+                    }
+
+
+                }   // END VOIP Kopfnummer und Vorwahl
+
+
+            }   // END // Haben wir eine mögliche Kundennummer?
+
+        }   // END // Durchlauf der Zeilen
+
+
+
+        echo "<pre>";
+        print_r($myData);
+        echo "</pre><br>";
+
+        return true;
+
+    }   // END private function getDataFromExcelPhone()
+
+
+
+
+
+
+
+
+
+    // Lese Excelfile und gebe die Daten lesbar zurück
+    private function readDataFromExcelPhone($filepath)
+    {
+
+        $myNewData = array();
+        $preData = file($filepath);
+
+        foreach ($preData as $newLine){
+            $myNewData[][0] = $newLine;
+        }
+        $Data = $myNewData;
+
+        foreach ($Data as $index=>$row){
+
+            $eachValueArray = str_getcsv($row[0], ";");
+
+            $myData[$index] = $eachValueArray;
+        }
+
+        return $myData;
+
+    }   // END private function readDataFromExcelPhone()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // Daten vom Radius-Server lesen
+    private function getDataFromRadiusServer()
+    {
+
+
+        $DBObject = new mysqli('p:'.$this->hostRadi, $this->usernameRadi, $this->passwordRadi, 'radius');
+
+
+        // DB Verbindung fehlgeschlagen?
+        if ($DBObject->connect_errno) {
+            echo "Failed to connect to MySQL: (" . $DBObject->connect_errno . ") " . $DBObject->connect_error;
+
+            exit;
+        }
+
+        $cntNoRadData = 0;
+
+        // Durchlauf Main ... CustomerID
+        foreach ($this->globalData as $mainCustomerID => $customerArrayMain){
+
+
+            // Durchlauf CustomerID
+            foreach ($customerArrayMain['CUSTOMER_ID'] as $curCustomerID => $customerArray){
+
+
+                // DATEN EBENE
+
+                // Radius Username vorhanden? ... Dann Daten aus Radius lesen
+                if ( (isset($customerArray['RADIUS_PRE_USERNAME'])) && (strlen($customerArray['RADIUS_PRE_USERNAME']) > 0) ){
+
+                    $query = "SELECT * FROM radcheck WHERE `username` = '".$customerArray['RADIUS_PRE_USERNAME']."' LIMIT 1";
+
+                    $result = $DBObject->query($query);
+
+                    $num_rows = $result->num_rows;
+                    if ($num_rows == 1){
+
+                        $row = $result->fetch_object();
+
+                        $curDATEN_USERPASSWORT  = $row->value;
+                        $curUSERINFO_ID         = $row->id;
+
+                        $this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['DATEN_USERNAME']      = $customerArray['RADIUS_PRE_USERNAME'];
+                        $this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['DATEN_USERPASSWORT']  = $curDATEN_USERPASSWORT;
+                        $this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['USERINFO_ID']         = $curUSERINFO_ID;
+
+                    }
+                    else {
+                        $cntNoRadData++;
+
+                        // echo $cntNoRadData . " Habe user nicht im Radiusserver gefunden: KDNr. " . $curCustomerID . " Authname " . $customerArray['RADIUS_PRE_USERNAME']."<br>";
+                        // Setze Flag auf ... noch nicht angelegt
+                        $this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['DATEN_USERNAME']      = '';
+                        $this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['DATEN_USERPASSWORT']  = '';
+                        $this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['USERINFO_ID'] = '-1';
+                    }
+
+                    mysqli_free_result($result);
+
+                }
+
+
+            }   // END   // Durchlauf CustomerID
+
+
+        }   // END // Durchlauf Main ... CustomerID
+
+
+        return true;
+
+    }   // END private function getDataFromRadiusServer()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // Customer Vorname - Nachname einlesen
+    private function getNamesFromCustomer()
+    {
+
+        $query = "SELECT  * FROM CUSTOMER_ADDRESSES WHERE CUSTOMER_ID > '0' AND ADDRESS_TYPE_ID = '10010' ORDER BY ADDRESS_ID";
+        $result = ibase_query($this->dbF, $query);
+
+        $cnt = 0;
+        while ($row = ibase_fetch_object($result)) {
+            $cnt++;
+            $curCustomerID  = $row->CUSTOMER_ID;
+            $curName        = $row->NAME;
+            $curFirstname   = $row->FIRSTNAME;
+
+            //echo $curCustomerID . "<br>";
+
+
+            if (array_key_exists($curCustomerID, $this->globalData)) {
+
+                // Daten hinzufügen:
+                $this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['RADIUS_PRE_FIRSTNAME'] = $row->FIRSTNAME;
+                $this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['RADIUS_PRE_SURNAME']   = $row->NAME;
+                $radiusUsername = $this->getRadiusUsernameByFirstSurname($row->FIRSTNAME, $row->NAME);
+                $this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['RADIUS_PRE_USERNAME']   = $radiusUsername;
+            }
+        }
+
+        ibase_free_result($result);
+
+        return true;
+
+    }   // END private function getNamesFromCustomer()
+
+
+
+
+
+
+
+
+
+    // Liefert den potentiellen Usernamen für den Radiusserver aus Vor-Nachname
+    private function getRadiusUsernameByFirstSurname($getFirstname, $getSurname)
+    {
+
+        $getFirstname = utf8_encode($getFirstname);
+        $getSurname = utf8_encode($getSurname);
+
+        // Namen zunächst formatieren und Sonderzeichen entfernen
+        $getFirstname   = $this->getRadiusUserFormated($getFirstname);
+        $getSurname     = $this->getRadiusUserFormated($getSurname);
+
+
+        // Brauche nur das erste Zeichen vom Vornamen
+        $oneLetterFirstname = substr($getFirstname, 0, 1);
+
+        // Zeichenketten zusammensetzen
+        $retAuthname = $oneLetterFirstname . $getSurname;
+
+        return $retAuthname;
+
+    }   // END private function getRadiusUsernameByFirstSurname($getFirstname, $getSurname)
+
+
+
+
+
+
+
+
+    // Formatiert Vor-Nachnamen nach Radius - Standard
+    private function getRadiusUserFormated($getName)
+    {
+
+        // Trim
+        $getName = trim($getName);
+
+        // Daten to lower
+        $getName   = strtolower($getName);
+
+        // Sonderzeichen erstetzen ö ä ü ß `
+        $getName   = $this->cleanSpecialChar($getName);
+
+        return $getName;
+
+    }   // END private function getRadiusUserFormated(...)
+
+
+
+
+
+
+
+
+
+
+
+    // Ersetzt Sonderzeichen
+    private function cleanSpecialChar($getVal)
+    {
+
+        $getVal = str_replace("Ä", "Ae", $getVal);
+        $getVal = str_replace("ä", "ae", $getVal);
+        $getVal = str_replace("Ü", "Ue", $getVal);
+        $getVal = str_replace("ü", "ue", $getVal);
+        $getVal = str_replace("Ö", "Oe", $getVal);
+        $getVal = str_replace("ö", "oe", $getVal);
+        $getVal = str_replace("ß", "ss", $getVal);
+        $getVal = str_replace("´", "", $getVal);
+        $getVal = str_replace("-", "", $getVal);
+
+        return $getVal;
+
+    } // END private function cleanSpecialChar($getVal)
 
 
 
@@ -368,7 +740,7 @@ class Dimari
 
 
     // Ermittelt die Adressdaten für das Telefonbuch
-    private function getAddressPhoneBoockByCustomerIDAndTypeID($getCustomerID, $phoneBookEntryType)
+    public function getAddressPhoneBoockByCustomerIDAndTypeID($getCustomerID, $phoneBookEntryType)
     {
         $retArray = array();
 
@@ -382,16 +754,16 @@ class Dimari
 
             // Nur wenn alle Daten gewünscht sind diese auch setzen
             if ($phoneBookEntryType == '10001'){
-                $retArray['TELEFONBUCH_NACHNAME']   = $row->NAME;
-                $retArray['TELEFONBUCH_VORNAME']    = $row->FIRSTNAME;
-                $retArray['TELEFONBUCH_STRASSE']    = $row->STREET . ' ' . $row->HOUSENO . ' ' . $row->HOUSENO_SUPPL;
-                $retArray['TELEFONBUCH_PLZ']        = $row->CITYCODE;
-                $retArray['TELEFONBUCH_ORT']        = $row->CITY;
-                $retArray['TELEFONBUCH_FAX']        = $row->FAX;
+                $retArray['TELEBUCH_NACHNAME']   = $row->NAME;
+                $retArray['TELEBUCH_VORNAME']    = $row->FIRSTNAME;
+                $retArray['TELEBUCH_STRASSE']    = $row->STREET . ' ' . $row->HOUSENO . ' ' . $row->HOUSENO_SUPPL;
+                $retArray['TELEBUCH_PLZ']        = $row->CITYCODE;
+                $retArray['TELEBUCH_ORT']        = $row->CITY;
+                $retArray['TELEBUCH_FAX']        = $row->FAX;
             }
             else {
-                $retArray['TELEFONBUCH_NACHNAME']   = $row->NAME;
-                $retArray['TELEFONBUCH_VORNAME']    = $row->FIRSTNAME;
+                $retArray['TELEBUCH_NACHNAME']   = $row->NAME;
+                $retArray['TELEBUCH_VORNAME']    = $row->FIRSTNAME;
             }
         }
 
@@ -492,17 +864,17 @@ class Dimari
 
                                     // Telefonnummer inversuche sperren?
                                     if ($row->INVERS_SEARCH == '1')
-                                        $this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$curCOV_ID]['SUBS_ID'][$row->SUBS_ID]['TELEFONBUCH_SPERRE_INVERS'] = 'N';
+                                        $this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$curCOV_ID]['SUBS_ID'][$row->SUBS_ID]['TELEBUCH_SPERRE_INVERS'] = 'N';
                                     else
-                                        $this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$curCOV_ID]['SUBS_ID'][$row->SUBS_ID]['TELEFONBUCH_SPERRE_INVERS'] = 'J';
+                                        $this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$curCOV_ID]['SUBS_ID'][$row->SUBS_ID]['TELEBUCH_SPERRE_INVERS'] = 'J';
 
 
 
                                     // Elektr.Telefonbuch?
                                     if ($row->DIGITAL_MEDIA == '1')
-                                        $this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$curCOV_ID]['SUBS_ID'][$row->SUBS_ID]['TELEFONBUCH_EINTRAG_ELEKT'] = 'J';
+                                        $this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$curCOV_ID]['SUBS_ID'][$row->SUBS_ID]['TELEBUCH_EINTRAG_ELEKT'] = 'J';
                                     else
-                                        $this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$curCOV_ID]['SUBS_ID'][$row->SUBS_ID]['TELEFONBUCH_EINTRAG_ELEKT'] = 'N';
+                                        $this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$curCOV_ID]['SUBS_ID'][$row->SUBS_ID]['TELEBUCH_EINTRAG_ELEKT'] = 'N';
 
 
 
@@ -515,7 +887,7 @@ class Dimari
                                     $this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$curCOV_ID]['SUBS_ID'][$row->SUBS_ID][$curVOIP_ACCOUNT_PASSWORT] = $row->SIP_PASSWORD;
 
                                     // Vorwahl
-                                    $curVOIP_NATIONAL_VORWAHL = 'VOIP_NATIONAL_VORWAHLT_' . $cntInnerSubscriber;
+                                    $curVOIP_NATIONAL_VORWAHL = 'VOIP_NATIONAL_VORWAHL_' . $cntInnerSubscriber;
                                     $val = $this->getNatVorwahl($row->SUBSCRIBER_ID);
                                     $this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$curCOV_ID]['SUBS_ID'][$row->SUBS_ID][$curVOIP_NATIONAL_VORWAHL] = $val;
 
@@ -582,7 +954,7 @@ class Dimari
 
 
     // Vorwahl extrahieren
-    private function getNatVorwahl($arg=0)
+    public function getNatVorwahl($arg=0)
     {
         $val = 0;
         $pattern = $arg;
@@ -606,7 +978,7 @@ class Dimari
 
 
     // Vorwahl extrahieren
-    private function getKopfnummer($arg=0)
+    public function getKopfnummer($arg=0)
     {
 
         $val = 0;
@@ -637,7 +1009,7 @@ class Dimari
 
 
     // Carrier Referenz einlesen
-    private function getCarrierRef()
+    public function getCarrierRef()
     {
 
         $query = "SELECT * FROM CARRIER ORDER BY CARRIER_ID";
@@ -1222,9 +1594,8 @@ class Dimari
 
 
     // Ruft Methoden mit flush auf
-    private function flushByFunctionCall($getFunction, $hExp=false)
+    public function flushByFunctionCall($getFunction, $hExp=false)
     {
-
 
         flush();
         ob_flush();
@@ -1260,7 +1631,7 @@ class Dimari
 
 
     // Dimari Datenbankverbindung herstellen
-    private function createDimariDBConnection()
+    public function createDimariDBConnection()
     {
 
         $host       = $this->myHost;
@@ -1282,7 +1653,7 @@ class Dimari
 
 
     // Ibase num_rows
-    private function ibase_num_rows($result)
+    public function ibase_num_rows($result)
     {
         $myResult = $result;
 
@@ -1298,7 +1669,7 @@ class Dimari
 
 
     // Datum passend formatieren
-    private function getFormatDate($getDate=null)
+    public function getFormatDate($getDate=null)
     {
 
         if (strlen($getDate) > 0)
@@ -1323,7 +1694,7 @@ class Dimari
 
 
     // Status hinzufügen und jetzt ausgeben
-    private function outNow($messageValue, $messageStatus='unset', $messageType='Runtime')
+    public function outNow($messageValue, $messageStatus='unset', $messageType='Runtime')
     {
 
         // Message hinzufügen
@@ -1344,7 +1715,7 @@ class Dimari
 
 
     // Status ausgeben:
-    private function showStatus()
+    public function showStatus()
     {
 
         $cntCategorie = 0;
@@ -1405,7 +1776,7 @@ class Dimari
 
 
     // Hänge ein Message an die ggf. schon bestehenden Messages
-    private function addMessage($messageValue, $messageStatus='unset', $messageType='Runtime')
+    public function addMessage($messageValue, $messageStatus='unset', $messageType='Runtime')
     {
 
         $this->myMessage[$messageType]['messageValue'][]  = $messageValue;

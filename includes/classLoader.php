@@ -6,8 +6,10 @@
  * Time: 08:31
  */
 
-// Klasse DimariExport laden
-include 'classes/DimariExp.class.php';
 
 // KLasse Dimari laden
 include 'classes/Dimari.class.php';
+
+
+// Klasse DimariExport laden
+include 'classes/DimariExp.class.php';
