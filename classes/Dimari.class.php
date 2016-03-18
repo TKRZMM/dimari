@@ -24,12 +24,10 @@ class Dimari
 	// Customer einlesen die NICHT StatusID x haben
 	// Tabelle: CUSTOMER_STATUS
 	// Feld:    STATUS_ID
-	public $setNoCustomerInStatusID = array('FTTC' => array(),
-											'FTTH' => array()
+	// Nicht gekündigt '10004' ... nicht archiv '2'
+	public $setNoCustomerInStatusID = array('FTTC' => array('10004', '2'),
+											'FTTH' => array('10004', '2')
 	);
-//    private $etNoCustomerInStatusID = array('FTTC' => array('10004', '2'),
-//                                                'FTTH' => array()
-//                                            );
 
 
 	// Nummern für Produkte die für Internet wichtig sind ... u.a. nur diese Daten werden gezogen
@@ -165,6 +163,7 @@ class Dimari
 		// Export Typ FTTC oder FTTH gesetzt?
 		if (!$this->setExportType) {
 			print ('FEHLER: "$setExportType" muss auf FTTC oder FTTH gesetzt werden!<br>Programm stop!<br>');
+
 			return false;
 		}
 
@@ -272,10 +271,10 @@ class Dimari
 
 
 		// Durchlauf Customer
-		foreach ($this->globalData as $preCurCustomerID => $mainCustomerArray) {
+		foreach($this->globalData as $preCurCustomerID => $mainCustomerArray) {
 
 
-			foreach ($mainCustomerArray['CUSTOMER_ID'] as $curCustomerID => $customerArray) {
+			foreach($mainCustomerArray['CUSTOMER_ID'] as $curCustomerID => $customerArray) {
 
 
 				// Puretel Kunde?
@@ -287,12 +286,24 @@ class Dimari
 						$curMatcher = $customerArray['VOIP_ACCOUNT_1'];
 
 						// Durchlauf csv-Daten
-						foreach ($myData as $index => $valArray) {
+						foreach($myData as $index => $valArray) {
 
 							if ($curMatcher == $valArray[0]) {
 
 								// VOIP_TRANSACTION_NO_1
 								$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_TRANSACTION_NO_1'] = $valArray[1];
+
+								// Hardcode
+								// VOIP_EXT_PRODUKT_ID
+								$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_EXT_PRODUKT_ID'] = '771';
+
+								// Hardcode
+								// VOIP_DIENST_BEZEICHNUNG
+								$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_DIENST_BEZEICHNUNG'] = 'TKRZ Telefonie';
+
+								// Hardcode
+								// VOIP_DIENST_BEMERKUNG
+								$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_DIENST_BEMERKUNG'] = 'Bei Purtel';
 
 								// ??? break;
 							}
@@ -329,7 +340,7 @@ class Dimari
 
 
 		// Durchlauf der Zeilen
-		foreach ($myData as $index => $dataSetArray) {
+		foreach($myData as $index => $dataSetArray) {
 
 			$tryCustomerID = trim($dataSetArray[0]);
 
@@ -338,7 +349,14 @@ class Dimari
 			// Haben wir eine mögliche Kundennummer?
 			if (preg_match($search, $tryCustomerID)) {
 
+				// Ja hier ist ein Purtel - Kunde
+
 				$curCustomerID = trim($dataSetArray[0]);
+
+
+				// Setzte TELEFONBUCHEINTRAG ... auf N bei Purtel Kunden
+				$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['TELEFONBUCHEINTRAG'] = 'N';
+
 
 				// VOIP_PORTIERUNG updaten?
 				if (strlen($dataSetArray[14]) > 0) {
@@ -429,10 +447,10 @@ class Dimari
 
 					$curDOPPELADER_1 = trim($dataSetArray[10]);
 
-					// Setze KABELVERZWEIGER
+					// Setze DOPPELADER_1
 					$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['DOPPELADER_1'] = $curDOPPELADER_1;
 
-				}   // END // KABELVERZWEIGER
+				}   // END // DOPPELADER_1
 
 
 
@@ -441,10 +459,46 @@ class Dimari
 
 					$curDSLAM_PORT = trim($dataSetArray[11]);
 
-					// Setze KABELVERZWEIGER
+					// Setze DSLAM_PORT
 					$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['DSLAM_PORT'] = $curDSLAM_PORT;
 
-				}   // END // KABELVERZWEIGER
+				}   // END // DSLAM_PORT
+
+
+
+
+
+				// ROUTER_SERIEN_NR & ROUTER_MODELL
+				if (strlen($dataSetArray[21]) > 0) {
+
+					$curROUTER_SERIEN_NR = trim($dataSetArray[21]);
+
+					// Setze ROUTER_SERIEN_NR
+					$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['ROUTER_SERIEN_NR'] = $curROUTER_SERIEN_NR;
+
+
+					// HARDCODE
+					$curROUTER_MODELL = 'Fritz Box 7xxx';
+
+					// Setze ROUTER_MODELL
+					$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['ROUTER_MODELL'] = $curROUTER_MODELL;
+
+				}   // END // ROUTER_SERIEN_NR & ROUTER_MODELL
+
+
+				// PURTEL_HAUPTANSCHLUSS & PURTEL_KUNDENNUMMER
+				if (strlen($dataSetArray[16]) > 0) {
+
+					$curPURTEL_HAUPTANSCHLUSS = trim($dataSetArray[16]);
+
+					// Setze PURTEL_HAUPTANSCHLUSS
+					$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['PURTEL_HAUPTANSCHLUSS'] = $curPURTEL_HAUPTANSCHLUSS;
+
+					// Setze PURTEL_KUNDENNUMMER
+					$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['PURTEL_KUNDENNUMMER'] = $curCustomerID;
+
+				}   // END // PURTEL_HAUPTANSCHLUSS & PURTEL_KUNDENNUMMER
+
 
 
 
@@ -474,12 +528,12 @@ class Dimari
 		$myNewData = array();
 		$preData = file($filepath);
 
-		foreach ($preData as $newLine) {
+		foreach($preData as $newLine) {
 			$myNewData[][0] = $newLine;
 		}
 		$Data = $myNewData;
 
-		foreach ($Data as $index => $row) {
+		foreach($Data as $index => $row) {
 
 			$eachValueArray = str_getcsv($row[0], ";");
 
@@ -513,11 +567,11 @@ class Dimari
 		$cntNoRadData = 0;
 
 		// Durchlauf Main ... CustomerID
-		foreach ($this->globalData as $mainCustomerID => $customerArrayMain) {
+		foreach($this->globalData as $mainCustomerID => $customerArrayMain) {
 
 
 			// Durchlauf CustomerID
-			foreach ($customerArrayMain['CUSTOMER_ID'] as $curCustomerID => $customerArray) {
+			foreach($customerArrayMain['CUSTOMER_ID'] as $curCustomerID => $customerArray) {
 
 
 				// DATEN EBENE
@@ -689,11 +743,11 @@ class Dimari
 		$cntSumPhoneBookEntry = 0;
 
 		// Durchlauf Customer_ID
-		foreach ($this->globalData['CUSTOMER_ID_Array'] as $curCustomerID => $curCustomerArray) {
+		foreach($this->globalData['CUSTOMER_ID_Array'] as $curCustomerID => $curCustomerArray) {
 
 
 			// Durchlauf Vertrag
-			foreach ($curCustomerArray['CONTRACT_ID'] as $curContractID => $curContractArray) {
+			foreach($curCustomerArray['CONTRACT_ID'] as $curContractID => $curContractArray) {
 
 
 				// DATEN EBENE
@@ -714,7 +768,7 @@ class Dimari
 
 
 					// Durchlauf Produkte
-					foreach ($curContractArray['PRODUCT_ID'] as $curProductID => $curProductArray) {
+					foreach($curContractArray['PRODUCT_ID'] as $curProductID => $curProductArray) {
 
 						// Telefonbuch - Typ gesetzt?
 						if (isset($curProductArray['TELEFONBUCHEINTRAG']))
@@ -725,12 +779,12 @@ class Dimari
 
 						// Durchlauf COV_ID sprich CO_VOICEDATA - Eben
 						if (isset($curProductArray['COV_ID'])) {
-							foreach ($curProductArray['COV_ID'] as $curCOV_ID => $curCOVArray) {
+							foreach($curProductArray['COV_ID'] as $curCOV_ID => $curCOVArray) {
 
 
 								// Durchlauf SUBS_ID
 								if (isset($curCOVArray['SUBS_ID'])) {
-									foreach ($curCOVArray['SUBS_ID'] as $curSubID => $curSubArray) {
+									foreach($curCOVArray['SUBS_ID'] as $curSubID => $curSubArray) {
 
 										$cntSumPhoneNumbers++;
 
@@ -744,7 +798,7 @@ class Dimari
 
 													$cntSumPhoneBookEntry++;
 
-													foreach ($retArray as $keyName => $value) {
+													foreach($retArray as $keyName => $value) {
 														$this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$curCOV_ID]['SUBS_ID'][$curSubID][$keyName] = $value;
 													}
 												}
@@ -838,17 +892,17 @@ class Dimari
 		$cntSubscriber = 0;
 
 		// Durchlauf Customer_ID
-		foreach ($this->globalData['CUSTOMER_ID_Array'] as $curCustomerID => $curCustomerArray) {
+		foreach($this->globalData['CUSTOMER_ID_Array'] as $curCustomerID => $curCustomerArray) {
 
 
 			// Durchlauf Vertrag
-			foreach ($curCustomerArray['CONTRACT_ID'] as $curContractID => $curContractArray) {
+			foreach($curCustomerArray['CONTRACT_ID'] as $curContractID => $curContractArray) {
 
 				// DATEN EBENE!!!
 				//TODO ... hmmm sollte ich hier abfangen wenn garkeine PRODCT_ID vorhanden ist?
 
 				// Durchlauf Produkte
-				foreach ($curContractArray['PRODUCT_ID'] as $curProductID => $curProductArray) {
+				foreach($curContractArray['PRODUCT_ID'] as $curProductID => $curProductArray) {
 
 					// Prüfen ob VOIP Daten für das Produkt vorhanden sein sollten
 					if (in_array($curProductID, $this->setProductIDForVOIP[$this->setExportType])) {
@@ -857,7 +911,7 @@ class Dimari
 						if (isset($curProductArray['COV_ID'])) {
 
 							// Durchlauf COV_ID sprich CO_VOICEDATA - Eben
-							foreach ($curProductArray['COV_ID'] as $curCOV_ID => $curCOVArray) {
+							foreach($curProductArray['COV_ID'] as $curCOV_ID => $curCOVArray) {
 
 								$query = "SELECT * FROM SUBSCRIBER WHERE COV_ID = '" . $curCOV_ID . "' ORDER BY DISPLAY_POSITION";
 
@@ -1051,17 +1105,17 @@ class Dimari
 
 
 		// Durchlauf Customer_ID
-		foreach ($this->globalData['CUSTOMER_ID_Array'] as $curCustomerID => $curCustomerArray) {
+		foreach($this->globalData['CUSTOMER_ID_Array'] as $curCustomerID => $curCustomerArray) {
 
 
 			// Durchlauf Vertrag
-			foreach ($curCustomerArray['CONTRACT_ID'] as $curContractID => $curContractArray) {
+			foreach($curCustomerArray['CONTRACT_ID'] as $curContractID => $curContractArray) {
 
 				// DATEN EBENE!!!
 				//TODO ... hmmm sollte ich hier abfangen wenn garkeine PRODCT_ID vorhanden ist?
 
 				// Durchlauf Produkte
-				foreach ($curContractArray['PRODUCT_ID'] as $curProductID => $curProductArray) {
+				foreach($curContractArray['PRODUCT_ID'] as $curProductID => $curProductArray) {
 
 					// Prüfen ob VOIP Daten für das Produkt vorhanden sein sollten
 					if (in_array($curProductID, $this->setProductIDForVOIP[$this->setExportType])) {
@@ -1167,7 +1221,7 @@ class Dimari
 			$addInternet .= " AND (";
 
 			$bool = true;
-			foreach ($this->setProductIDForInternet[$this->setExportType] as $index => $curProductID) {
+			foreach($this->setProductIDForInternet[$this->setExportType] as $index => $curProductID) {
 
 				if ($bool)
 					$addInternet .= " p.PRODUCT_ID = '" . $curProductID . "' ";
@@ -1194,7 +1248,7 @@ class Dimari
 				$bool = true;
 			}
 
-			foreach ($this->setProductIDForVOIP[$this->setExportType] as $index => $curProductID) {
+			foreach($this->setProductIDForVOIP[$this->setExportType] as $index => $curProductID) {
 
 				if ($bool)
 					$addPhone .= " p.PRODUCT_ID = '" . $curProductID . "' ";
@@ -1220,13 +1274,13 @@ class Dimari
 		$cntProducts = 0;
 
 		// Durchlauf Customer_ID
-		foreach ($this->globalData['CUSTOMER_ID_Array'] as $curCustomerID => $curCustomerArray) {
+		foreach($this->globalData['CUSTOMER_ID_Array'] as $curCustomerID => $curCustomerArray) {
 
 			$boolGotData = false;
 
 
 			// Durchlauf Vertrag
-			foreach ($curCustomerArray['CONTRACT_ID'] as $curContractID => $curContractArray) {
+			foreach($curCustomerArray['CONTRACT_ID'] as $curContractID => $curContractArray) {
 
 				// DATEN EBENE!!!
 
@@ -1333,7 +1387,7 @@ class Dimari
 		$cntCustomerHasNoContract = 0;
 
 		// Durchlauf Customer_ID
-		foreach ($this->globalData['CUSTOMER_ID_Array'] as $curCustomerID => $curCustomerArray) {
+		foreach($this->globalData['CUSTOMER_ID_Array'] as $curCustomerID => $curCustomerArray) {
 
 			$cntContractsPerCustomer = 0;
 
@@ -1414,7 +1468,7 @@ class Dimari
 		// Nur Customer einlesen die in der Gruppe x sind?
 		if ((isset($this->setCustomerByGroupID[$this->setExportType])) && (count($this->setCustomerByGroupID[$this->setExportType]) > 0)) {
 			$bool = false;
-			foreach ($this->setCustomerByGroupID[$this->setExportType] as $curGroupID) {
+			foreach($this->setCustomerByGroupID[$this->setExportType] as $curGroupID) {
 
 				if (!$bool)
 					$add .= " WHERE GROUP_ID = '" . $curGroupID . "' ";
@@ -1433,7 +1487,7 @@ class Dimari
 
 		// Nur Customer einlesen die NICHT Status x haben?
 		if ((isset($this->setNoCustomerInStatusID[$this->setExportType])) && (count($this->setNoCustomerInStatusID[$this->setExportType]) > 0)) {
-			foreach ($this->setNoCustomerInStatusID[$this->setExportType] as $curStatusID) {
+			foreach($this->setNoCustomerInStatusID[$this->setExportType] as $curStatusID) {
 				$add .= " AND STATUS_ID != '" . $curStatusID . "' ";
 
 				$this->addMessage('Einschränkung: Nicht Status_ID', $curStatusID, 'Info');
@@ -1628,7 +1682,7 @@ class Dimari
 		print ('<div style="position: fixed; overflow: auto; top: 5px; bottom: 20px; min-width: 600px; right: 5px; background-color: beige"><table>');
 
 		// Durchlauf der Message - Kategorien
-		foreach ($this->myMessage as $messageType => $curMessageArray) {
+		foreach($this->myMessage as $messageType => $curMessageArray) {
 
 			// Sind Einträge in der Kategorie vorhanden?
 			if (count($curMessageArray) > 0) {
@@ -1645,7 +1699,7 @@ class Dimari
 				// SpaltenTyp ausgeben:
 				print ('<tr><td style="min-width: 40px;" class="bottomLine">Cnt</td><td style="min-width: 260px;" class="bottomLine">Event</td><td class="bottomLine">Status</td></tr>');
 
-				foreach ($curMessageArray['messageValue'] as $fieldIndex => $value) {
+				foreach($curMessageArray['messageValue'] as $fieldIndex => $value) {
 
 					print ('<tr><td class="bottomLine">');
 

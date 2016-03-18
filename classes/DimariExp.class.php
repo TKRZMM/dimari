@@ -97,7 +97,7 @@ class DimariExp extends Dimari
 //        echo "</pre><br>";
 
 		// Datei schreiben:
-		$downloadLink = 'DimariDiensteExpFTTC_20160316';
+		$downloadLink = 'DimariDiensteExpFTTC_20160318';
 
 		// '/var/www/html/www/uploads/';
 		$storeFile = 'uploads/' . $downloadLink . '.csv';
