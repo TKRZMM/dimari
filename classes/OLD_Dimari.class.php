@@ -1,5 +1,7 @@
 <?php
 
+
+
 /**
  * Created by PhpStorm.
  * User: MMelching
@@ -8,703 +10,694 @@
  */
 class OLD_Dimari
 {
-    // Initial Variable
-    public $globalMessage = array();    // Status Messages
-    public $globalData = array();       // Data zum verarbeiten
-    public $globalTarget = array();     // Ziel Ausgabe
 
+	// Initial Variable
+	public $globalMessage = array();    // Status Messages
+	public $globalData = array();       // Data zum verarbeiten
+	public $globalTarget = array();     // Ziel Ausgabe
 
-    // Gruppen-Typ der verarbeitet werden soll FFTC / FTTH ... steuert $SET_GROUP_ID_BY_TYPE
-    public $getGroupType;
 
-    // Gruppen-Typ der verarbeitet werden soll FFTC / FTTH ... steuert $SET_ACCOUNT_ID_BY_TYPE
-    public $getAccountType;
+	// Gruppen-Typ der verarbeitet werden soll FFTC / FTTH ... steuert $SET_GROUP_ID_BY_TYPE
+	public $getGroupType;
 
-    // Datenbank - Verbindung zu Dimari
-    private $dbF;
+	// Gruppen-Typ der verarbeitet werden soll FFTC / FTTH ... steuert $SET_ACCOUNT_ID_BY_TYPE
+	public $getAccountType;
 
-    // Group IDs für diesen Export:
-    // SELECT * FROM CUSTOMER WHERE GROUP_ID = 'XXX' ORDER BY CUSTOMER_ID
-    private $SET_GROUP_ID_BY_TYPE = array('FTTC' => array('100011'),
-                                          'FTTH' => array('100005','100006','100007','100008','100002','100001'));
+	// Datenbank - Verbindung zu Dimari
+	private $dbF;
 
+	// Group IDs für diesen Export:
+	// SELECT * FROM CUSTOMER WHERE GROUP_ID = 'XXX' ORDER BY CUSTOMER_ID
+	private $SET_GROUP_ID_BY_TYPE = array('FTTC' => array('100011'),
+										  'FTTH' => array('100005', '100006', '100007', '100008', '100002', '100001'));
 
-    /*
-    // AccountNo IDs für diesen Export: (Tabelle ACCOUNTS)
-    private $SET_ACCOUNT_ID_BY_TYPE = array('FTTC' => array('85200','85300','85600'),
-                                            'FTTH' => array(''));
-    */
 
-    // Nummer für Telefonie in der ACCOUNTS
-    private $SET_ACCOUNT_ID_FOR_PHONE = array ('FTTC' => array('85200','85500','15001'));
+	/*
+	// AccountNo IDs für diesen Export: (Tabelle ACCOUNTS)
+	private $SET_ACCOUNT_ID_BY_TYPE = array('FTTC' => array('85200','85300','85600'),
+											'FTTH' => array(''));
+	*/
 
+	// Nummer für Telefonie in der ACCOUNTS
+	private $SET_ACCOUNT_ID_FOR_PHONE = array('FTTC' => array('85200', '85500', '15001'));
 
-    // StatusID der Cunden/Dienste die NICHT(!!!) exportiert werden sollen.
-    private $SET_ACCOUNT_BY_STATUS_ID = array('FTTC' => array('10004','2'),
-                                               'FTTH' => array(''));
 
+	// StatusID der Cunden/Dienste die NICHT(!!!) exportiert werden sollen.
+	private $SET_ACCOUNT_BY_STATUS_ID = array('FTTC' => array('10004', '2'),
+											  'FTTH' => array(''));
 
-    // Nur unterzeichnete Vertärge exportieren?
-    private  $SET_TRANSFER_ONLY_SIGNED_DATA = 'no';
 
-    private $SET_PHONE_BOOK_ENTRY_IDS = array('10002', '10001');
+	// Nur unterzeichnete Vertärge exportieren?
+	private $SET_TRANSFER_ONLY_SIGNED_DATA = 'no';
 
-    private $host;
-    private $username;
-    private $password;
+	private $SET_PHONE_BOOK_ENTRY_IDS = array('10002', '10001');
 
-    private $myStatusContent = array('createDimariDBConnection'=>' ',
-                                     'getCustomerByGroupID'=>' ',
-                                     'getContractsByCustomeerID'=>' ',
-                                     'getProductsByContractID'=>' ',
-                                     'getCOVoicedataByCOID'=>' ',
-                                     'getCarrierRef'=>' ',
-                                     'getSubscriberByCOVID'=>' ',
-                                     'getPhoneBookEntrysByCustomerID'=>' ',
-                                     'initialDimariExport'=>' ');
+	private $host;
+	private $username;
+	private $password;
 
+	private $myStatusContent = array('createDimariDBConnection'       => ' ',
+									 'getCustomerByGroupID'           => ' ',
+									 'getContractsByCustomeerID'      => ' ',
+									 'getProductsByContractID'        => ' ',
+									 'getCOVoicedataByCOID'           => ' ',
+									 'getCarrierRef'                  => ' ',
+									 'getSubscriberByCOVID'           => ' ',
+									 'getPhoneBookEntrysByCustomerID' => ' ',
+									 'initialDimariExport'            => ' ');
 
 
-    //private $SET_EXAMPLE_CUSTOMER_ID = '20010120';        // Matthias Brumm(!) ... Chaos
+	//private $SET_EXAMPLE_CUSTOMER_ID = '20010120';        // Matthias Brumm(!) ... Chaos
 
-    //private $SET_EXAMPLE_CUSTOMER_ID = '20010003';        // FTTC Gruppe ist aber FTTH!!!
-    //private $SET_EXAMPLE_CUSTOMER_ID = '20010686';        // Kein VOIP Username - Passwort ... Vertrag nicht unterschrieben!
+	//private $SET_EXAMPLE_CUSTOMER_ID = '20010003';        // FTTC Gruppe ist aber FTTH!!!
+	//private $SET_EXAMPLE_CUSTOMER_ID = '20010686';        // Kein VOIP Username - Passwort ... Vertrag nicht unterschrieben!
 
-    //private $SET_EXAMPLE_CUSTOMER_ID = '20010190';        // Vertrag in Zukunft ... nicht unterzeichnet(!) bzw. Portierung bestätigt 4 VOIP
+	//private $SET_EXAMPLE_CUSTOMER_ID = '20010190';        // Vertrag in Zukunft ... nicht unterzeichnet(!) bzw. Portierung bestätigt 4 VOIP
 
-    // private $SET_EXAMPLE_CUSTOMER_ID = '20010003';       // Standard Kunde 1 VOIP
-    //private $SET_EXAMPLE_CUSTOMER_ID = '20010612';        // Standard Kunde 2 VOIP
-    //private $SET_EXAMPLE_CUSTOMER_ID = '20010603';        // Standard Kunde 3 VOIP ... mit Telefonbuch - Eintrag in der Sub-Auswahl
+//     private $SET_EXAMPLE_CUSTOMER_ID = '20010003';       // Standard Kunde 1 VOIP
+	//private $SET_EXAMPLE_CUSTOMER_ID = '20010612';        // Standard Kunde 2 VOIP
+	//private $SET_EXAMPLE_CUSTOMER_ID = '20010603';        // Standard Kunde 3 VOIP ... mit Telefonbuch - Eintrag in der Sub-Auswahl
 
 
 
-    public function __construct($host, $username, $password)
-    {
-        $this->host     = $host;
-        $this->username = $username;
-        $this->password = $password;
-    }
 
+	public function __construct($host, $username, $password)
+	{
 
+		$this->host = $host;
+		$this->username = $username;
+		$this->password = $password;
+	}
 
-    public function myName($out=false)
-    {
-        if ($out)
-            print (__CLASS__);
 
-        return __CLASS__;
-    }
 
 
 
 
-    // Initial - Methode ... FTTC - Dienste an Konzeptum
-    public function initialGetFTTCServices()
-    {
-        // Status festhalten:
-        $this->globalMessage['Status'][] = 'START';
+	public function myName($out = false)
+	{
 
-        // Status festhalten:
-        $this->globalMessage['Status'][] = 'Typ: ' . $this->getGroupType;
+		if ($out)
+			print (__CLASS__);
 
-        flush();
-        ob_flush();
+		return __CLASS__;
+	}
 
-        // Dimari DB Verbindung herstellen
-        $this->flushByFunctionCall('createDimariDBConnection');
 
 
-        // Customer einlesen die in der angegebenen GruppenID enthalten sind
-        $this->flushByFunctionCall('getCustomerByGroupID');
 
 
-        // Contracts einlesen die zu den ausgewählten Customer gehören
-        $this->flushByFunctionCall('getContractsByCustomeerID');
 
+	// Initial - Methode ... FTTC - Dienste an Konzeptum
+	public function initialGetFTTCServices()
+	{
 
-        // CO_Products einlesen die zu den Contracts gehören
-        $this->flushByFunctionCall('getProductsByContractID');
+		// Status festhalten:
+		$this->globalMessage['Status'][] = 'START';
 
+		// Status festhalten:
+		$this->globalMessage['Status'][] = 'Typ: ' . $this->getGroupType;
 
-        // VOIP Daten einlesen
-        $this->flushByFunctionCall('getCOVoicedataByCOID');
+		flush();
+		ob_flush();
 
+		// Dimari DB Verbindung herstellen
+		$this->flushByFunctionCall('createDimariDBConnection');
 
-        // Carrier Referenz einlesen
-        $this->flushByFunctionCall('getCarrierRef');
 
+		// Customer einlesen die in der angegebenen GruppenID enthalten sind
+		$this->flushByFunctionCall('getCustomerByGroupID');
 
-        // VOIP - Telefonnummern einlesen
-        $this->flushByFunctionCall('getSubscriberByCOVID');
 
+		// Contracts einlesen die zu den ausgewählten Customer gehören
+		$this->flushByFunctionCall('getContractsByCustomeerID');
 
-        // Telefonbucheinträge ermitteln
-        $this->flushByFunctionCall('getPhoneBookEntrysByCustomerID');
 
+		// CO_Products einlesen die zu den Contracts gehören
+		$this->flushByFunctionCall('getProductsByContractID');
 
-        // Daten in Datei exportieren
-        $hExp = new DimariExp($this->globalTarget);
-        $this->flushByFunctionCall('initialDimariExport', $hExp);
 
-        return true;
-    }
+		// VOIP Daten einlesen
+		$this->flushByFunctionCall('getCOVoicedataByCOID');
 
 
+		// Carrier Referenz einlesen
+		$this->flushByFunctionCall('getCarrierRef');
 
-    private function flushByFunctionCall($getFunction, $hExp=false)
-    {
 
+		// VOIP - Telefonnummern einlesen
+		$this->flushByFunctionCall('getSubscriberByCOVID');
 
-        flush();
-        ob_flush();
-        $this->showStatus($getFunction, 'CALL');
-        flush();
-        ob_flush();
 
-        $callBy = $this;
-        if ($hExp)
-            $callBy = $hExp;
+		// Telefonbucheinträge ermitteln
+		$this->flushByFunctionCall('getPhoneBookEntrysByCustomerID');
 
-        // Methode aufrufen
-        if (!$callBy->$getFunction()){
-            $this->showStatus($getFunction, 'FAIL');
-            flush();
-            ob_flush();
 
-            return false;
-        }
+		// Daten in Datei exportieren
+		$hExp = new DimariExp($this->globalTarget);
+		$this->flushByFunctionCall('initialDimariExport', $hExp);
 
-        flush();
-        ob_flush();
-        $this->showStatus($getFunction, 'DONE');
-        flush();
-        ob_flush();
+		return true;
+	}
 
-        return true;
 
-    }
 
 
 
-    private function showStatus($content, $status=false)
-    {
-        // Status ausgeben:
-        print ('<div style="position: fixed; top: 5px; right: 400px; background-color: beige"><table>');
 
-        foreach ($this->myStatusContent as $fieldname=>$value) {
+	private function flushByFunctionCall($getFunction, $hExp = false)
+	{
 
-            print ('<tr><td>');
 
-            if ($fieldname == $content){
-                $this->myStatusContent[$fieldname] = $status;
-                $value = $status;
-            }
-            print ($fieldname);
+		flush();
+		ob_flush();
+		$this->showStatus($getFunction, 'CALL');
+		flush();
+		ob_flush();
 
-            print ('</td><td style="width: 60px; text-align: center;">');
-            print ($value);
-            print ('</td></tr>');
-        }
+		$callBy = $this;
+		if ($hExp)
+			$callBy = $hExp;
 
-        print ('</table></div>');
-    }
+		// Methode aufrufen
+		if (!$callBy->$getFunction()) {
+			$this->showStatus($getFunction, 'FAIL');
+			flush();
+			ob_flush();
 
+			return false;
+		}
 
+		flush();
+		ob_flush();
+		$this->showStatus($getFunction, 'DONE');
+		flush();
+		ob_flush();
 
+		return true;
 
+	}
 
 
 
 
 
 
-    // Carrier Referenz einlesen
-    private function getCarrierRef()
-    {
+	private function showStatus($content, $status = false)
+	{
 
-        $query = "SELECT * FROM CARRIER ORDER BY CARRIER_ID";
+		// Status ausgeben:
+		print ('<div style="position: fixed; top: 5px; right: 400px; background-color: beige"><table>');
 
-        $result = ibase_query($this->dbF, $query);
+		foreach ($this->myStatusContent as $fieldname => $value) {
 
-        while ($row = ibase_fetch_object($result)) {
+			print ('<tr><td>');
 
-            $this->globalData['CARRIER'][$row->CARRIER_ID]['CARRIER_ID'] = $row->CARRIER_ID;
-            $this->globalData['CARRIER'][$row->CARRIER_ID]['CARRIER_NAME'] = $row->NAME;
-            $this->globalData['CARRIER'][$row->CARRIER_ID]['CARRIER_CODE'] = $row->CARRIER_CODE;
-        }
+			if ($fieldname == $content) {
+				$this->myStatusContent[$fieldname] = $status;
+				$value = $status;
+			}
+			print ($fieldname);
 
-        ibase_free_result($result);
+			print ('</td><td style="width: 60px; text-align: center;">');
+			print ($value);
+			print ('</td></tr>');
+		}
 
-        return true;
-    }
+		print ('</table></div>');
+	}
 
 
 
 
 
 
+	// Carrier Referenz einlesen
+	private function getCarrierRef()
+	{
 
+		$query = "SELECT * FROM CARRIER ORDER BY CARRIER_ID";
 
+		$result = ibase_query($this->dbF, $query);
 
+		while ($row = ibase_fetch_object($result)) {
 
+			$this->globalData['CARRIER'][$row->CARRIER_ID]['CARRIER_ID'] = $row->CARRIER_ID;
+			$this->globalData['CARRIER'][$row->CARRIER_ID]['CARRIER_NAME'] = $row->NAME;
+			$this->globalData['CARRIER'][$row->CARRIER_ID]['CARRIER_CODE'] = $row->CARRIER_CODE;
+		}
 
+		ibase_free_result($result);
 
+		return true;
+	}
 
 
 
-    // Telefonbuch Einträge?
-    private function getSubscriberByCOVID()
-    {
 
-        // Benötigte Daten vorhanden?
-        if (!isset($this->globalTarget['CUSTOMER_ID']))
-            return false;
 
-        // Durchlauf Customer
-        foreach ($this->globalTarget['CUSTOMER_ID'] as $curCustomerID=>$contractArray) {
-            // echo "CustomerID: $curCustomerID --> <br>";
 
-            // Durchlauf Contracts
-            foreach ($contractArray['CO_ID'] as $curContractID => $someDataArray) {
+	// Telefonbuch Einträge?
+	private function getSubscriberByCOVID()
+	{
 
-                // Aktuelle Product_ID in der Telefongruppe?
-                // Durchlauf PRODUCT_ID
-                foreach ($someDataArray as $dataBezeichnung=>$dynDataType){
+		// Benötigte Daten vorhanden?
+		if (!isset($this->globalTarget['CUSTOMER_ID']))
+			return false;
 
-                    if ($dataBezeichnung == 'PRODUCT_ID') {
-                    //if ( ($dataBezeichnung == 'PRODUCT_ID') && (isset($dynDataType['COV_ID'])) ) {
+		// Durchlauf Customer
+		foreach ($this->globalTarget['CUSTOMER_ID'] as $curCustomerID => $contractArray) {
+			// echo "CustomerID: $curCustomerID --> <br>";
 
-                        // Durchlauf Produkt IDs
-                        foreach ($dynDataType as $curProductID => $someProductDescriptions) {
+			// Durchlauf Contracts
+			foreach ($contractArray['CO_ID'] as $curContractID => $someDataArray) {
 
+				// Aktuelle Product_ID in der Telefongruppe?
+				// Durchlauf PRODUCT_ID
+				foreach ($someDataArray as $dataBezeichnung => $dynDataType) {
 
-                            // Ist das Produkt ein Telefonprodukt?
-                            if ( (in_array($someProductDescriptions['ACCOUNT_NO'], $this->SET_ACCOUNT_ID_FOR_PHONE[$this->getGroupType])) && (isset($someProductDescriptions['COV_ID'])) ) {
-                                // Ja ... Telefonprodukt!
+					if ($dataBezeichnung == 'PRODUCT_ID') {
+						//if ( ($dataBezeichnung == 'PRODUCT_ID') && (isset($dynDataType['COV_ID'])) ) {
 
-                                foreach ($someProductDescriptions['COV_ID'] as $covIDIndex=>$curCOV_IDArray){
+						// Durchlauf Produkt IDs
+						foreach ($dynDataType as $curProductID => $someProductDescriptions) {
 
-                                    $query = "SELECT * FROM SUBSCRIBER WHERE COV_ID = '".$covIDIndex."' ORDER BY DISPLAY_POSITION";
 
-                                    $result = ibase_query($this->dbF, $query);
+							// Ist das Produkt ein Telefonprodukt?
+							if ((in_array($someProductDescriptions['ACCOUNT_NO'], $this->SET_ACCOUNT_ID_FOR_PHONE[$this->getGroupType])) && (isset($someProductDescriptions['COV_ID']))) {
+								// Ja ... Telefonprodukt!
 
-                                    $cnt = 0;
-                                    $cntNumbers = 0;
-                                    while ($row = ibase_fetch_object($result)) {
-                                        $cnt++;
-                                        $cntNumbers++;
+								foreach ($someProductDescriptions['COV_ID'] as $covIDIndex => $curCOV_IDArray) {
 
-                                        $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID]['SUBS_ID'] = $row->SUBS_ID;
-                                        $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID]['SUBSCRIBER_ID'] = $row->SUBSCRIBER_ID;
+									$query = "SELECT * FROM SUBSCRIBER WHERE COV_ID = '" . $covIDIndex . "' ORDER BY DISPLAY_POSITION";
 
-                                        if ($row->DATE_PORTI_REQ)
-                                            $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID]['VOIP_PORT_TERMIN'] = $this->getFormatDate($row->DATE_PORTI_REQ);
+									$result = ibase_query($this->dbF, $query);
 
-                                        if ($row->CARRIER_ID > 0)
-                                        {
-                                            $curCarrierCode = $this->globalData['CARRIER'][$row->CARRIER_ID]['CARRIER_CODE'];
-                                            $curCarrierID   = $this->globalData['CARRIER'][$row->CARRIER_ID]['CARRIER_ID'];
-                                            $curCarrierName = $this->globalData['CARRIER'][$row->CARRIER_ID]['CARRIER_NAME'];
+									$cnt = 0;
+									$cntNumbers = 0;
+									while ($row = ibase_fetch_object($result)) {
+										$cnt++;
+										$cntNumbers++;
 
-                                            $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID]['CARRIER_ID'] = $curCarrierID;
-                                            $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID]['CARRIER_CODE'] = $curCarrierCode;
-                                            $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID]['CARRIER_NAME'] = $curCarrierName;
-                                        }
+										$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID]['SUBS_ID'] = $row->SUBS_ID;
+										$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID]['SUBSCRIBER_ID'] = $row->SUBSCRIBER_ID;
 
+										if ($row->DATE_PORTI_REQ)
+											$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID]['VOIP_PORT_TERMIN'] = $this->getFormatDate($row->DATE_PORTI_REQ);
 
+										if ($row->CARRIER_ID > 0) {
+											$curCarrierCode = $this->globalData['CARRIER'][$row->CARRIER_ID]['CARRIER_CODE'];
+											$curCarrierID = $this->globalData['CARRIER'][$row->CARRIER_ID]['CARRIER_ID'];
+											$curCarrierName = $this->globalData['CARRIER'][$row->CARRIER_ID]['CARRIER_NAME'];
 
-                                        // Telefonbuch - Flag?
-                                        if ($row->PHON_BOOK == '1'){
-                                            $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID]['TELEFONBUCHEINTRAG'] = 'J';
-                                            // Bool - Flag setzen:
-                                            $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['PhoneBookFlagFromSubscriber'] = 'yes';
-                                        }
-                                        else
-                                            $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID]['TELEFONBUCHEINTRAG'] = 'N';
+											$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID]['CARRIER_ID'] = $curCarrierID;
+											$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID]['CARRIER_CODE'] = $curCarrierCode;
+											$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID]['CARRIER_NAME'] = $curCarrierName;
+										}
 
 
 
-                                        // Telefonnummer inversuche sperren?
-                                        if ($row->INVERS_SEARCH == '1')
-                                            $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID]['TELEFONBUCH_SPERRE_INVERS'] = 'N';
-                                        else
-                                            $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID]['TELEFONBUCH_SPERRE_INVERS'] = 'J';
+										// Telefonbuch - Flag?
+										if ($row->PHON_BOOK == '1') {
+											$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID]['TELEFONBUCHEINTRAG'] = 'J';
+											// Bool - Flag setzen:
+											$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['PhoneBookFlagFromSubscriber'] = 'yes';
+										} else
+											$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID]['TELEFONBUCHEINTRAG'] = 'N';
 
 
 
-                                        // Elektr.Telefonbuch?
-                                        if ($row->DIGITAL_MEDIA == '1')
-                                            $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID]['TELEFONBUCH_EINTRAG_ELEKT'] = 'J';
-                                        else
-                                            $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID]['TELEFONBUCH_EINTRAG_ELEKT'] = 'N';
+										// Telefonnummer inversuche sperren?
+										if ($row->INVERS_SEARCH == '1')
+											$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID]['TELEFONBUCH_SPERRE_INVERS'] = 'N';
+										else
+											$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID]['TELEFONBUCH_SPERRE_INVERS'] = 'J';
 
 
 
-                                        // SIP Authname
-                                        $curVOIP_ACCOUNT = 'VOIP_ACCOUNT_' . $cntNumbers;
-                                        $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID][$curVOIP_ACCOUNT] = $row->SIP_AUTHNAME;
+										// Elektr.Telefonbuch?
+										if ($row->DIGITAL_MEDIA == '1')
+											$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID]['TELEFONBUCH_EINTRAG_ELEKT'] = 'J';
+										else
+											$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID]['TELEFONBUCH_EINTRAG_ELEKT'] = 'N';
 
-                                        // SIP Passwort
-                                        $curVOIP_ACCOUNT_PASSWORT = 'VOIP_ACCOUNT_PASSWORT_' . $cntNumbers;
-                                        $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID][$curVOIP_ACCOUNT_PASSWORT] = $row->SIP_PASSWORD;
 
-                                        // Vorwahl
-                                        $curVOIP_NATIONAL_VORWAHL = 'VOIP_NATIONAL_VORWAHLT_' . $cntNumbers;
-                                        $val = $this->getNatVorwahl($row->SUBSCRIBER_ID);
-                                        $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID][$curVOIP_NATIONAL_VORWAHL] = $val;
 
-                                        // Kopfnummer
-                                        $curVOIP_KOPFNUMMER = 'VOIP_KOPFNUMMER_' . $cntNumbers;
-                                        $val = $this->getKopfnummer($row->SUBSCRIBER_ID);
-                                        $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID][$curVOIP_KOPFNUMMER] = $val;
+										// SIP Authname
+										$curVOIP_ACCOUNT = 'VOIP_ACCOUNT_' . $cntNumbers;
+										$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID][$curVOIP_ACCOUNT] = $row->SIP_AUTHNAME;
 
+										// SIP Passwort
+										$curVOIP_ACCOUNT_PASSWORT = 'VOIP_ACCOUNT_PASSWORT_' . $cntNumbers;
+										$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID][$curVOIP_ACCOUNT_PASSWORT] = $row->SIP_PASSWORD;
 
-                                        // echo $curVOIP_ACCOUNT ."<br>";
-                                    }
+										// Vorwahl
+										$curVOIP_NATIONAL_VORWAHL = 'VOIP_NATIONAL_VORWAHLT_' . $cntNumbers;
+										$val = $this->getNatVorwahl($row->SUBSCRIBER_ID);
+										$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID][$curVOIP_NATIONAL_VORWAHL] = $val;
 
-                                    ibase_free_result($result);
+										// Kopfnummer
+										$curVOIP_KOPFNUMMER = 'VOIP_KOPFNUMMER_' . $cntNumbers;
+										$val = $this->getKopfnummer($row->SUBSCRIBER_ID);
+										$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$covIDIndex]['SUBS_ID'][$row->SUBS_ID][$curVOIP_KOPFNUMMER] = $val;
 
-                                }
 
+										// echo $curVOIP_ACCOUNT ."<br>";
+									}
 
-                            }
-                        }
-                    }
+									ibase_free_result($result);
 
-                }
+								}
 
-            }
 
-        }
+							}
+						}
+					}
 
-        // Status festhalten:
-        //$this->globalMessage['Status'][] = $cntPhoneBEntrysA . ' / '.$cntPhoneBEntrysB.' (Wunsch / Standard) Telefonbucheinträge wurden ermittelt!';
+				}
 
-        return true;
+			}
 
-    }   // END private function getPhoneBookEntrysByCustomerID
+		}
 
+		// Status festhalten:
+		//$this->globalMessage['Status'][] = $cntPhoneBEntrysA . ' / '.$cntPhoneBEntrysB.' (Wunsch / Standard) Telefonbucheinträge wurden ermittelt!';
 
+		return true;
 
+	}   // END private function getPhoneBookEntrysByCustomerID
 
 
 
 
 
 
-    // Vorwahl extrahieren
-    private function getNatVorwahl($arg=0)
-    {
-        $val = 0;
-        $pattern = $arg;
-        $search = '/(.*\d+)+( )(\d+)( )(.\d+)/';
-        $matches[1] = '';
-        $matches[3] = '';
+	// Vorwahl extrahieren
+	private function getNatVorwahl($arg = 0)
+	{
 
-        preg_match($search, $pattern, $matches);
-        if ( (isset($matches[3])) && (strlen($matches[3] > 0)) )
-            $val = '0'.$matches[3];
+		$val = 0;
+		$pattern = $arg;
+		$search = '/(.*\d+)+( )(\d+)( )(.\d+)/';
+		$matches[1] = '';
+		$matches[3] = '';
 
-        return trim($val);
-    }
+		preg_match($search, $pattern, $matches);
+		if ((isset($matches[3])) && (strlen($matches[3] > 0)))
+			$val = '0' . $matches[3];
 
+		return trim($val);
+	}
 
 
-    // Vorwahl extrahieren
-    private function getKopfnummer($arg=0)
-    {
-        $val = 0;
-        $pattern = $arg;
-        $search = '/(.*\d+)+( )(\d+)( )(.\d+)/';
-        $matches[5] = '';
 
-        preg_match($search, $pattern, $matches);
 
-        if ( (isset($matches[5])) && (strlen($matches[5] > 0)) )
-            $val = $matches[5];
 
-        return trim($val);
-    }
 
+	// Vorwahl extrahieren
+	private function getKopfnummer($arg = 0)
+	{
 
+		$val = 0;
+		$pattern = $arg;
+		$search = '/(.*\d+)+( )(\d+)( )(.\d+)/';
+		$matches[5] = '';
 
+		preg_match($search, $pattern, $matches);
 
+		if ((isset($matches[5])) && (strlen($matches[5] > 0)))
+			$val = $matches[5];
 
+		return trim($val);
+	}
 
 
 
 
-    // Telefonbuch Einträge?
-    private function getPhoneBookEntrysByCustomerID()
-    {
 
-        // Benötigte Daten vorhanden?
-        if (!isset($this->globalTarget['CUSTOMER_ID']))
-            return false;
 
-        $cntPhoneBEntrysA = 0;
-        $cntPhoneBEntrysB = 0;
+	// Telefonbuch Einträge?
+	private function getPhoneBookEntrysByCustomerID()
+	{
 
-        // Durchlauf Customer
-        foreach ($this->globalTarget['CUSTOMER_ID'] as $curCustomerID=>$contractArray) {
-            // echo "CustomerID: $curCustomerID --> <br>";
+		// Benötigte Daten vorhanden?
+		if (!isset($this->globalTarget['CUSTOMER_ID']))
+			return false;
 
+		$cntPhoneBEntrysA = 0;
+		$cntPhoneBEntrysB = 0;
 
-            // Haben wir grün aus Co_Voicedata?
-            $boolA = false;
-            if ( (isset($this->globalTarget['CUSTOMER_ID'][$curCustomerID]['PhoneBookFlagFromCO_VOICEDATA'])) && ($this->globalTarget['CUSTOMER_ID'][$curCustomerID]['PhoneBookFlagFromCO_VOICEDATA'] == 'yes') )
-                $boolA = true;
+		// Durchlauf Customer
+		foreach ($this->globalTarget['CUSTOMER_ID'] as $curCustomerID => $contractArray) {
+			// echo "CustomerID: $curCustomerID --> <br>";
 
-            // Haben wir grün aus Subscriber?
-            $boolB = false;
-            if ( (isset($this->globalTarget['CUSTOMER_ID'][$curCustomerID]['PhoneBookFlagFromSubscriber'])) && ($this->globalTarget['CUSTOMER_ID'][$curCustomerID]['PhoneBookFlagFromSubscriber'] == 'yes') )
-                $boolB = true;
 
-            if ($boolA && $boolA){
+			// Haben wir grün aus Co_Voicedata?
+			$boolA = false;
+			if ((isset($this->globalTarget['CUSTOMER_ID'][$curCustomerID]['PhoneBookFlagFromCO_VOICEDATA'])) && ($this->globalTarget['CUSTOMER_ID'][$curCustomerID]['PhoneBookFlagFromCO_VOICEDATA'] == 'yes'))
+				$boolA = true;
 
-                // Durchlauf Contracts
-                foreach ($contractArray['CO_ID'] as $curContractID => $someDataArray) {
+			// Haben wir grün aus Subscriber?
+			$boolB = false;
+			if ((isset($this->globalTarget['CUSTOMER_ID'][$curCustomerID]['PhoneBookFlagFromSubscriber'])) && ($this->globalTarget['CUSTOMER_ID'][$curCustomerID]['PhoneBookFlagFromSubscriber'] == 'yes'))
+				$boolB = true;
 
-                    if (isset($someDataArray['PRODUCT_ID'])){
-                        foreach ($someDataArray['PRODUCT_ID'] as $curProductID=>$cov_array){
-                            if (isset($cov_array['TELEFONBUCHEINTRAG']))
-                                $phoneBookEntryType = $cov_array['TELEFONBUCHEINTRAG'];
+			if ($boolA && $boolA) {
 
-                            if (isset($cov_array['COV_ID'])){
-                                foreach ($cov_array['COV_ID'] as $curCOV_ID=>$nextArrayA){
+				// Durchlauf Contracts
+				foreach ($contractArray['CO_ID'] as $curContractID => $someDataArray) {
 
-                                    if (isset($nextArrayA['SUBS_ID'])){
-                                        foreach ($nextArrayA['SUBS_ID'] as $curSubID=>$subIDArray){
+					if (isset($someDataArray['PRODUCT_ID'])) {
+						foreach ($someDataArray['PRODUCT_ID'] as $curProductID => $cov_array) {
+							if (isset($cov_array['TELEFONBUCHEINTRAG']))
+								$phoneBookEntryType = $cov_array['TELEFONBUCHEINTRAG'];
 
-                                            if ( (isset($subIDArray['TELEFONBUCHEINTRAG'])) && ($subIDArray['TELEFONBUCHEINTRAG'] == 'J') ){
+							if (isset($cov_array['COV_ID'])) {
+								foreach ($cov_array['COV_ID'] as $curCOV_ID => $nextArrayA) {
 
-                                                if ($phoneBookEntryType > 0){
-                                                    $retArray = $this->getAddressPhoneBoockByCustomerIDAndTypeID($curCustomerID, $phoneBookEntryType);
+									if (isset($nextArrayA['SUBS_ID'])) {
+										foreach ($nextArrayA['SUBS_ID'] as $curSubID => $subIDArray) {
 
-                                                    if (count($retArray) > 0){
-                                                        foreach ($retArray as $keyName=>$value){
-                                                            $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$curCOV_ID]['SUBS_ID'][$curSubID][$keyName] = $value;
-                                                        }
-                                                    }
+											if ((isset($subIDArray['TELEFONBUCHEINTRAG'])) && ($subIDArray['TELEFONBUCHEINTRAG'] == 'J')) {
 
-                                                }
+												if ($phoneBookEntryType > 0) {
+													$retArray = $this->getAddressPhoneBoockByCustomerIDAndTypeID($curCustomerID, $phoneBookEntryType);
 
-                                            }
+													if (count($retArray) > 0) {
+														foreach ($retArray as $keyName => $value) {
+															$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$curCOV_ID]['SUBS_ID'][$curSubID][$keyName] = $value;
+														}
+													}
 
+												}
 
-                                        }
-                                    }
+											}
 
-                                }
-                            }
 
+										}
+									}
 
-                        }
-                    }
+								}
+							}
 
 
-                }
+						}
+					}
 
-            }
 
-        }
+				}
 
-        // Status festhalten:
-        //$this->globalMessage['Status'][] = $cntPhoneBEntrysA . ' / '.$cntPhoneBEntrysB.' (Wunsch / Standard) Telefonbucheinträge wurden ermittelt!';
+			}
 
-        return true;
+		}
 
-    }   // END private function getPhoneBookEntrysByCustomerID
+		// Status festhalten:
+		//$this->globalMessage['Status'][] = $cntPhoneBEntrysA . ' / '.$cntPhoneBEntrysB.' (Wunsch / Standard) Telefonbucheinträge wurden ermittelt!';
 
+		return true;
 
+	}   // END private function getPhoneBookEntrysByCustomerID
 
 
 
 
 
 
-    // Ermittelt die Adressdaten für das Telefonbuch
-    private function getAddressPhoneBoockByCustomerIDAndTypeID($getCustomerID, $phoneBookEntryType)
-    {
-        $retArray = array();
+	// Ermittelt die Adressdaten für das Telefonbuch
+	private function getAddressPhoneBoockByCustomerIDAndTypeID($getCustomerID, $phoneBookEntryType)
+	{
 
-        // ID 10011 == Expliziet gewünschter Telefonbucheintrag
-        $query = "SELECT * FROM CUSTOMER_ADDRESSES WHERE CUSTOMER_ID = '".$getCustomerID."' AND (ADDRESS_TYPE_ID = '10010' OR ADDRESS_TYPE_ID = '10011') ORDER BY ADDRESS_TYPE_ID";
-        $result = ibase_query($this->dbF, $query);
+		$retArray = array();
 
-        $cnt = 0;
-        while ($row = ibase_fetch_object($result)) {
-         $cnt++;
+		// ID 10011 == Expliziet gewünschter Telefonbucheintrag
+		$query = "SELECT * FROM CUSTOMER_ADDRESSES WHERE CUSTOMER_ID = '" . $getCustomerID . "' AND (ADDRESS_TYPE_ID = '10010' OR ADDRESS_TYPE_ID = '10011') ORDER BY ADDRESS_TYPE_ID";
+		$result = ibase_query($this->dbF, $query);
 
-            // Nur wenn alle Daten gewünscht sind diese auch setzen
-            if ($phoneBookEntryType == '10001'){
-                $retArray['TELEFONBUCH_NACHNAME']   = $row->NAME;
-                $retArray['TELEFONBUCH_VORNAME']    = $row->FIRSTNAME;
-                $retArray['TELEFONBUCH_STRASSE']    = $row->STREET . ' ' . $row->HOUSENO . ' ' . $row->HOUSENO_SUPPL;
-                $retArray['TELEFONBUCH_PLZ']        = $row->CITYCODE;
-                $retArray['TELEFONBUCH_ORT']        = $row->CITY;
-                $retArray['TELEFONBUCH_FAX']        = $row->FAX;
-            }
-            else {
-                $retArray['TELEFONBUCH_NACHNAME']   = $row->NAME;
-                $retArray['TELEFONBUCH_VORNAME']    = $row->FIRSTNAME;
-            }
-        }
+		$cnt = 0;
+		while ($row = ibase_fetch_object($result)) {
+			$cnt++;
 
-        ibase_free_result($result);
+			// Nur wenn alle Daten gewünscht sind diese auch setzen
+			if ($phoneBookEntryType == '10001') {
+				$retArray['TELEFONBUCH_NACHNAME'] = $row->NAME;
+				$retArray['TELEFONBUCH_VORNAME'] = $row->FIRSTNAME;
+				$retArray['TELEFONBUCH_STRASSE'] = $row->STREET . ' ' . $row->HOUSENO . ' ' . $row->HOUSENO_SUPPL;
+				$retArray['TELEFONBUCH_PLZ'] = $row->CITYCODE;
+				$retArray['TELEFONBUCH_ORT'] = $row->CITY;
+				$retArray['TELEFONBUCH_FAX'] = $row->FAX;
+			} else {
+				$retArray['TELEFONBUCH_NACHNAME'] = $row->NAME;
+				$retArray['TELEFONBUCH_VORNAME'] = $row->FIRSTNAME;
+			}
+		}
 
-        return $retArray;
-    }
+		ibase_free_result($result);
 
+		return $retArray;
+	}
 
 
 
 
 
 
+	private function test()
+	{
 
+		echo "hallo WElt";
+	}
 
 
-    // VOIP Daten einlesen
-    private function getCOVoicedataByCOID()
-    {
 
-        // Benötigte Daten vorhanden?
-        if (!isset($this->globalTarget['CUSTOMER_ID']))
-            return false;
 
-        $cntVoiceData = 0;
 
-        // Durchlauf Customer
-        foreach ($this->globalTarget['CUSTOMER_ID'] as $curCustomerID=>$contractArray) {
-            // echo "CustomerID: $curCustomerID --> <br>";
 
+	// VOIP Daten einlesen
+	private function getCOVoicedataByCOID()
+	{
 
-            // Durchlauf Contracts
-            foreach ($contractArray['CO_ID'] as $curContractID => $someDataArray) {
-                // echo "ContractID: $curContractID ---> <br>";
+		// Benötigte Daten vorhanden?
+		if (!isset($this->globalTarget['CUSTOMER_ID']))
+			return false;
 
+		$cntVoiceData = 0;
 
-                // Durchlauf PRODUCT_ID
-                foreach ($someDataArray as $dataBezeichnung=>$dynDataType){
+		// Durchlauf Customer
+		foreach ($this->globalTarget['CUSTOMER_ID'] as $curCustomerID => $contractArray) {
+			// echo "CustomerID: $curCustomerID --> <br>";
 
-                    if ($dataBezeichnung == 'PRODUCT_ID'){
 
-                        // Durchlauf Produkt IDs
-                        foreach ($dynDataType as $curProductID=>$someProductDescriptions){
+			// Durchlauf Contracts
+			foreach ($contractArray['CO_ID'] as $curContractID => $someDataArray) {
+				// echo "ContractID: $curContractID ---> <br>";
 
 
-                            // Ist das Produkt ein Telefonprodukt?
-                            if (in_array($someProductDescriptions['ACCOUNT_NO'], $this->SET_ACCOUNT_ID_FOR_PHONE[$this->getGroupType])){
-                                // Ja ... Telefonprodukt!
+				// Durchlauf PRODUCT_ID
+				foreach ($someDataArray as $dataBezeichnung => $dynDataType) {
 
-                                $query = "SELECT * FROM CO_VOICEDATA WHERE CO_ID = '".$curContractID."' AND STATUS_ID > '0' ORDER BY CO_ID";
-                                $result = ibase_query($this->dbF, $query);
+					if ($dataBezeichnung == 'PRODUCT_ID') {
 
-                                $cnt = 0;
-                                while ($row = ibase_fetch_object($result)) {
-                                    $cnt++;
-                                    $cntVoiceData++;
+						// Durchlauf Produkt IDs
+						foreach ($dynDataType as $curProductID => $someProductDescriptions) {
 
-                                    // EGN_VERFREMDUNG
-                                    if ($row->ANONYMISATION == 1)
-                                        $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['EGN_VERFREMDUNG'] = 'J';
-                                    else
-                                        $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['EGN_VERFREMDUNG'] = 'N';
 
+							// Ist das Produkt ein Telefonprodukt?
+							if (in_array($someProductDescriptions['ACCOUNT_NO'], $this->SET_ACCOUNT_ID_FOR_PHONE[$this->getGroupType])) {
+								// Ja ... Telefonprodukt!
 
-                                    // TELEFONBUCHEINTRAG ... temporär setzen
-                                    if (in_array($row->PHONE_BOOK_ENTRY_ID, $this->SET_PHONE_BOOK_ENTRY_IDS)){
-                                        $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['TELEFONBUCHEINTRAG'] = $row->PHONE_BOOK_ENTRY_ID;
-                                        $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['PhoneBookFlagFromCO_VOICEDATA'] = 'yes';
-                                    }
-                                    else
-                                        $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['TELEFONBUCHEINTRAG'] = '';
+								$query = "SELECT * FROM CO_VOICEDATA WHERE CO_ID = '" . $curContractID . "' AND STATUS_ID > '0' ORDER BY CO_ID";
+								$result = ibase_query($this->dbF, $query);
 
-                                    $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$row->COV_ID] = array('COV_ID'=>$row->COV_ID);
+								$cnt = 0;
+								while ($row = ibase_fetch_object($result)) {
+									$cnt++;
+									$cntVoiceData++;
 
-                                }
+									// EGN_VERFREMDUNG
+									if ($row->ANONYMISATION == 1)
+										$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['EGN_VERFREMDUNG'] = 'J';
+									else
+										$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['EGN_VERFREMDUNG'] = 'N';
 
-                                ibase_free_result($result);
 
-                            }
+									// TELEFONBUCHEINTRAG ... temporär setzen
+									if (in_array($row->PHONE_BOOK_ENTRY_ID, $this->SET_PHONE_BOOK_ENTRY_IDS)) {
+										$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['TELEFONBUCHEINTRAG'] = $row->PHONE_BOOK_ENTRY_ID;
+										$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['PhoneBookFlagFromCO_VOICEDATA'] = 'yes';
+									} else
+										$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['TELEFONBUCHEINTRAG'] = '';
 
-                        }
+									$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$row->COV_ID] = array('COV_ID' => $row->COV_ID);
 
-                    }
+								}
 
-                }
+								ibase_free_result($result);
 
-            }
+							}
 
-        }
+						}
 
-        // Status festhalten:
-        $this->globalMessage['Status'][] = $cntVoiceData . ' VoiceData IDs wurden ermittelt!';
+					}
 
-        return true;
+				}
 
-    }   // END private function getCOVoicedataByCOID()
+			}
 
+		}
 
+		// Status festhalten:
+		$this->globalMessage['Status'][] = $cntVoiceData . ' VoiceData IDs wurden ermittelt!';
 
+		return true;
 
+	}   // END private function getCOVoicedataByCOID()
 
 
 
 
 
 
+	// Products einlesen die zu den Contracts gehören
+	private function getProductsByContractID()
+	{
 
+		// Benötigte Daten vorhanden?
+		if (!isset($this->globalTarget['CUSTOMER_ID']))
+			return false;
 
+		$cntProducts = 0;
 
+		// Für jeden Contracts den Produkt-Eintrag ermitteln
+		// Durchlauf Customer
+		foreach ($this->globalTarget['CUSTOMER_ID'] as $curCustomerID => $contractArray) {
+			// echo "CustomerID: $curCustomerID --> <br>";
 
+			// Durchlauf Contracts
+			foreach ($contractArray['CO_ID'] as $curContractID => $someDataArray) {
+				// echo "ContractID: $curContractID ---> <br>";
 
+				// Dynamische Gruppen WHERE - Abfrage
+				$bool = false;
+				$add = '';
+				/*
+				foreach ($this->SET_ACCOUNT_ID_BY_TYPE[$this->getAccountType] as $curACCOUNTNO){
 
+					if (!$bool)
+						$add .= " WHERE cop.CO_ID = '".$curContractID."' AND (p.ACCOUNTNO = '".$curACCOUNTNO."' ";
+					else
+						$add .= " OR p.ACCOUNTNO = '".$curACCOUNTNO."' ";
 
+					$bool = true;
 
+				}
+				$add .= ')';
+				*/
 
-    // Products einlesen die zu den Contracts gehören
-    private function getProductsByContractID()
-    {
+				$add = " WHERE cop.CO_ID = '" . $curContractID . "' ";
 
-        // Benötigte Daten vorhanden?
-        if (!isset($this->globalTarget['CUSTOMER_ID']))
-            return false;
+				// $SET_ACCOUNT_ID_FOR_PHONE
 
-        $cntProducts = 0;
-
-        // Für jeden Contracts den Produkt-Eintrag ermitteln
-        // Durchlauf Customer
-        foreach ($this->globalTarget['CUSTOMER_ID'] as $curCustomerID=>$contractArray){
-            // echo "CustomerID: $curCustomerID --> <br>";
-
-            // Durchlauf Contracts
-            foreach ($contractArray['CO_ID'] as $curContractID=>$someDataArray){
-                // echo "ContractID: $curContractID ---> <br>";
-
-                // Dynamische Gruppen WHERE - Abfrage
-                $bool = false;
-                $add = '';
-                /*
-                foreach ($this->SET_ACCOUNT_ID_BY_TYPE[$this->getAccountType] as $curACCOUNTNO){
-
-                    if (!$bool)
-                        $add .= " WHERE cop.CO_ID = '".$curContractID."' AND (p.ACCOUNTNO = '".$curACCOUNTNO."' ";
-                    else
-                        $add .= " OR p.ACCOUNTNO = '".$curACCOUNTNO."' ";
-
-                    $bool = true;
-
-                }
-                $add .= ')';
-                */
-
-                $add = " WHERE cop.CO_ID = '".$curContractID."' ";
-
-                // $SET_ACCOUNT_ID_FOR_PHONE
-
-                $query = "SELECT cop.CO_ID          AS CO_ID,
+				$query = "SELECT cop.CO_ID          AS CO_ID,
                                  cop.CO_PRODUCT_ID  AS CO_PRODUCT_ID,
                                  p.DESCRIPTION      AS DESCRIPTION,
                                  p.PRODUCT_ID       AS PRODUCT_ID,
@@ -713,293 +706,251 @@ class OLD_Dimari
                             FROM CO_PRODUCTS cop
                               LEFT JOIN PRODUCTS p ON p.PRODUCT_ID = cop.PRODUCT_ID
                               LEFT JOIN ACCOUNTS a ON a.ACCOUNTNO = p.ACCOUNTNO
-                            ".$add."
+                            " . $add . "
                             ORDER BY cop.CO_PRODUCT_ID";
 
-                $result = ibase_query($this->dbF, $query);
+				$result = ibase_query($this->dbF, $query);
 
-                // UEBERMITTLUNG_RUFNR (DEFAULT)
+				// UEBERMITTLUNG_RUFNR (DEFAULT)
 //                $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['UEBERMITTLUNG_RUFNR'] = 'J';
 
-                $cnt = 0;
-                $bool_check_phonesend = true;
-                while ($row = ibase_fetch_object($result)) {
-                    $cnt++;
-                    $cntProducts++;
+				$cnt = 0;
+				$bool_check_phonesend = true;
+				while ($row = ibase_fetch_object($result)) {
+					$cnt++;
+					$cntProducts++;
 
-                    $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$row->PRODUCT_ID]['DIENST_BEZEICHNUNG'] = $row->DESCRIPTION;
+					$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$row->PRODUCT_ID]['DIENST_BEZEICHNUNG'] = $row->DESCRIPTION;
 
-                    $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$row->PRODUCT_ID]['ACCOUNT_NO'] = $row->ACCOUNTNO;
-                    $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$row->PRODUCT_ID]['ACCOUNT_BEZEICHNUNG'] = $row->ADESCRIPTION;
+					$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$row->PRODUCT_ID]['ACCOUNT_NO'] = $row->ACCOUNTNO;
+					$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$row->PRODUCT_ID]['ACCOUNT_BEZEICHNUNG'] = $row->ADESCRIPTION;
 
 
-                    // Ist das aktuelle Produkt ein Telefonprodukt?
-                    if (in_array($row->ACCOUNTNO, $this->SET_ACCOUNT_ID_FOR_PHONE[$this->getGroupType])){
+					// Ist das aktuelle Produkt ein Telefonprodukt?
+					if (in_array($row->ACCOUNTNO, $this->SET_ACCOUNT_ID_FOR_PHONE[$this->getGroupType])) {
 
-                        // 0900 Sperre?
-                        // if ($row->PRODUCT_ID == '10003')
-                           //  $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$row->PRODUCT_ID]['SPERRE_0900'] = 'J';
+						// 0900 Sperre?
+						// if ($row->PRODUCT_ID == '10003')
+						//  $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$row->PRODUCT_ID]['SPERRE_0900'] = 'J';
 
-                        // TODO ... 0900 Sperren setze ich hier per Hardcode auf J ... Aussae Lars K. 9.3.2016 ... Bestätigung Alex
-                        $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$row->PRODUCT_ID]['SPERRE_0900'] = 'J';
+						// TODO ... 0900 Sperren setze ich hier per Hardcode auf J ... Aussae Lars K. 9.3.2016 ... Bestätigung Alex
+						$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$row->PRODUCT_ID]['SPERRE_0900'] = 'J';
 
-                        // UEBERMITTLUNG_RUFNR prüfen solange bis ich eine Aussage dazu gefunden habe
-                        if ($bool_check_phonesend) {
+						// UEBERMITTLUNG_RUFNR prüfen solange bis ich eine Aussage dazu gefunden habe
+						if ($bool_check_phonesend) {
 
-                            // Default Wert ... Rufnummer übermitteln
-                            $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$row->PRODUCT_ID]['UEBERMITTLUNG_RUFNR'] = 'J';
+							// Default Wert ... Rufnummer übermitteln
+							$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$row->PRODUCT_ID]['UEBERMITTLUNG_RUFNR'] = 'J';
 
-                            if ($row->PRODUCT_ID == '1002') {
-                                $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$row->PRODUCT_ID]['UEBERMITTLUNG_RUFNR'] = 'N';
-                                $bool_check_phonesend = false;
-                            }
-                        }
+							if ($row->PRODUCT_ID == '1002') {
+								$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curContractID]['PRODUCT_ID'][$row->PRODUCT_ID]['UEBERMITTLUNG_RUFNR'] = 'N';
+								$bool_check_phonesend = false;
+							}
+						}
 
-                    }
+					}
 
-                }
+				}
 
-                ibase_free_result($result);
+				ibase_free_result($result);
 
-            }
-        }
+			}
+		}
 
-        // Status festhalten:
-        $this->globalMessage['Status'][] = $cntProducts . ' Product IDs wurden ermittelt!';
+		// Status festhalten:
+		$this->globalMessage['Status'][] = $cntProducts . ' Product IDs wurden ermittelt!';
 
-        return true;
+		return true;
 
-    }   // END private function getProductsByContractID()
+	}   // END private function getProductsByContractID()
 
 
 
 
 
 
+	// Contracts einlesen die zu den ausgewählten Customer gehören
+	private function getContractsByCustomeerID()
+	{
 
+		// Benötigte Daten vorhanden?
+		if (!isset($this->globalData['fromDB']['CUSTOMER']['CUSTOMER_ID']))
+			return false;
 
+		$cntContracts = 0;
+		//$x = 0;
+		foreach ($this->globalData['fromDB']['CUSTOMER']['CUSTOMER_ID'] as $index => $curCustomerID) {
 
+			$query = "SELECT * FROM CONTRACTS WHERE CUSTOMER_ID = '" . $curCustomerID . "' ORDER BY CO_ID";
+			$result = ibase_query($this->dbF, $query);
 
+			$cnt = 0;
+			while ($row = ibase_fetch_object($result)) {
 
+				//$x++;
+				//echo $x . " ". $row->CO_ID . " " . $row->DATE_SIGNED . "<br>";
 
+				// Nur unterzeichnete Daten übermitteln
+				if ($this->SET_TRANSFER_ONLY_SIGNED_DATA == 'yes') {
+					if ($row->DATE_SIGNED > 1) {
+						$cnt++;
+						$cntContracts++;
 
+						// Daten dem Ziel-Datensatz hinzufügen
+						$this->addTarget($curCustomerID, $row->CO_ID, 'CO_ID', $row->CO_ID);
+						$this->addTarget($curCustomerID, $row->CO_ID, 'DIENST_ART', $this->getGroupType);
+						$this->addTarget($curCustomerID, $row->CO_ID, 'NAT_BETREIBEREBENE', 'N');
+						$this->addTarget($curCustomerID, $row->CO_ID, 'GUELTIG_VON', $this->getFormatDate($row->DATE_ACTIVE));
+						$this->addTarget($curCustomerID, $row->CO_ID, 'GUELTIG_BIS', $this->getFormatDate($row->DATE_DEACTIVE));
+						$this->addTarget($curCustomerID, $row->CO_ID, 'ERFASST_AM', $this->getFormatDate($row->DATE_CREATED));
+						$this->addTarget($curCustomerID, $row->CO_ID, 'UNTERZEICHNET_AM', $this->getFormatDate($row->DATE_SIGNED));
+					}
+				} else {
+					$cnt++;
+					$cntContracts++;
 
-    // Contracts einlesen die zu den ausgewählten Customer gehören
-    private function getContractsByCustomeerID()
-    {
+					// Daten dem Ziel-Datensatz hinzufügen
+					$this->addTarget($curCustomerID, $row->CO_ID, 'CO_ID', $row->CO_ID);
+					$this->addTarget($curCustomerID, $row->CO_ID, 'DIENST_ART', $this->getGroupType);
+					$this->addTarget($curCustomerID, $row->CO_ID, 'NAT_BETREIBEREBENE', 'N');
+					$this->addTarget($curCustomerID, $row->CO_ID, 'GUELTIG_VON', $this->getFormatDate($row->DATE_ACTIVE));
+					$this->addTarget($curCustomerID, $row->CO_ID, 'GUELTIG_BIS', $this->getFormatDate($row->DATE_DEACTIVE));
+					$this->addTarget($curCustomerID, $row->CO_ID, 'ERFASST_AM', $this->getFormatDate($row->DATE_CREATED));
+					$this->addTarget($curCustomerID, $row->CO_ID, 'UNTERZEICHNET_AM', $this->getFormatDate($row->DATE_SIGNED));
+				}
 
-        // Benötigte Daten vorhanden?
-        if (!isset($this->globalData['fromDB']['CUSTOMER']['CUSTOMER_ID']))
-            return false;
+			}
 
-        $cntContracts = 0;
-        //$x = 0;
-        foreach ($this->globalData['fromDB']['CUSTOMER']['CUSTOMER_ID'] as $index=>$curCustomerID){
+			ibase_free_result($result);
+		}
 
-            $query = "SELECT * FROM CONTRACTS WHERE CUSTOMER_ID = '".$curCustomerID."' ORDER BY CO_ID";
-            $result = ibase_query($this->dbF, $query);
+		// Status festhalten:
+		$this->globalMessage['Status'][] = $cntContracts . ' Contracts IDs wurden ermittelt!';
 
-            $cnt = 0;
-            while ($row = ibase_fetch_object($result)) {
 
-                //$x++;
-                //echo $x . " ". $row->CO_ID . " " . $row->DATE_SIGNED . "<br>";
+		// Speicher für globalData freigeben!
+		$this->globalData = '';
 
-                // Nur unterzeichnete Daten übermitteln
-                if ($this->SET_TRANSFER_ONLY_SIGNED_DATA == 'yes')
-                {
-                    if ($row->DATE_SIGNED > 1) {
-                        $cnt++;
-                        $cntContracts++;
 
-                        // Daten dem Ziel-Datensatz hinzufügen
-                        $this->addTarget($curCustomerID, $row->CO_ID, 'CO_ID',              $row->CO_ID);
-                        $this->addTarget($curCustomerID, $row->CO_ID, 'DIENST_ART',         $this->getGroupType);
-                        $this->addTarget($curCustomerID, $row->CO_ID, 'NAT_BETREIBEREBENE', 'N');
-                        $this->addTarget($curCustomerID, $row->CO_ID, 'GUELTIG_VON',        $this->getFormatDate($row->DATE_ACTIVE));
-                        $this->addTarget($curCustomerID, $row->CO_ID, 'GUELTIG_BIS',        $this->getFormatDate($row->DATE_DEACTIVE));
-                        $this->addTarget($curCustomerID, $row->CO_ID, 'ERFASST_AM',         $this->getFormatDate($row->DATE_CREATED));
-                        $this->addTarget($curCustomerID, $row->CO_ID, 'UNTERZEICHNET_AM',   $this->getFormatDate($row->DATE_SIGNED));
-                    }
-                }
-                else {
-                    $cnt++;
-                    $cntContracts++;
+		return true;
 
-                    // Daten dem Ziel-Datensatz hinzufügen
-                    $this->addTarget($curCustomerID, $row->CO_ID, 'CO_ID',              $row->CO_ID);
-                    $this->addTarget($curCustomerID, $row->CO_ID, 'DIENST_ART',         $this->getGroupType);
-                    $this->addTarget($curCustomerID, $row->CO_ID, 'NAT_BETREIBEREBENE', 'N');
-                    $this->addTarget($curCustomerID, $row->CO_ID, 'GUELTIG_VON',        $this->getFormatDate($row->DATE_ACTIVE));
-                    $this->addTarget($curCustomerID, $row->CO_ID, 'GUELTIG_BIS',        $this->getFormatDate($row->DATE_DEACTIVE));
-                    $this->addTarget($curCustomerID, $row->CO_ID, 'ERFASST_AM',         $this->getFormatDate($row->DATE_CREATED));
-                    $this->addTarget($curCustomerID, $row->CO_ID, 'UNTERZEICHNET_AM',   $this->getFormatDate($row->DATE_SIGNED));
-                }
+	}   // END private function getContractsByCustomeerID()
 
-            }
 
-            ibase_free_result($result);
-        }
 
-        // Status festhalten:
-        $this->globalMessage['Status'][] = $cntContracts . ' Contracts IDs wurden ermittelt!';
 
 
-        // Speicher für globalData freigeben!
-        $this->globalData = '';
 
+	// Fügt einen Datensatz der Target-Variable hinzu
+	private function addTarget($curCustomerID, $curCOID, $field, $value)
+	{
 
-        return true;
+		$this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curCOID][$field] = $value;
 
-    }   // END private function getContractsByCustomeerID()
+		return true;
 
+	}
 
 
 
 
 
 
+	// Customer einlesen die in der angegebenen GruppenID enthalten sind
+	private function getCustomerByGroupID()
+	{
+		// Benötigte Daten vorhanden?
+		if ((!isset($this->getGroupType)) || (strlen($this->getGroupType) < 1))
+			return false;
 
 
-    // Fügt einen Datensatz der Target-Variable hinzu
-    private function addTarget($curCustomerID, $curCOID, $field, $value)
-    {
+		// Dynamische Gruppen WHERE - Abfrage
+		$bool = false;
+		$add = '';
+		foreach ($this->SET_GROUP_ID_BY_TYPE[$this->getGroupType] as $curGroupID) {
 
-        $this->globalTarget['CUSTOMER_ID'][$curCustomerID]['CO_ID'][$curCOID][$field]  = $value;
+			if (!$bool)
+				$add .= " WHERE GROUP_ID = '" . $curGroupID . "' ";
+			else
+				$add .= " OR GROUP_ID = '" . $curGroupID . "' ";
 
-        return true;
+			$bool = true;
 
-    }
+		}
 
+		// Nur Customer einlesen die den entsprechenden Status haben
+		foreach ($this->SET_ACCOUNT_BY_STATUS_ID[$this->getGroupType] as $curStatusID) {
+			$add .= " AND STATUS_ID != '" . $curStatusID . "' ";
+		}
 
+		// Nur ein Beispielkunde?
+		if ((isset($this->SET_EXAMPLE_CUSTOMER_ID)) && ($this->SET_EXAMPLE_CUSTOMER_ID > 0)) {
+			$add .= " AND CUSTOMER_ID = '" . $this->SET_EXAMPLE_CUSTOMER_ID . "' ";
+			$query = "SELECT * FROM CUSTOMER " . $add . " ORDER BY CUSTOMER_ID";
+		} else
+			$query = "SELECT * FROM CUSTOMER " . $add . " ORDER BY CUSTOMER_ID";
 
 
+		$result = ibase_query($this->dbF, $query);
 
+		$cnt = 0;
+		while ($row = ibase_fetch_object($result)) {
+			$cnt++;
 
+			$this->globalData['fromDB']['CUSTOMER']['CUSTOMER_ID'][] = $row->CUSTOMER_ID;
+		}
 
+		ibase_free_result($result);
 
+		// Status festhalten:
+		$this->globalMessage['Status'][] = $cnt . ' Customer IDs wurden ausgewählt!';
 
+		return true;
 
+	}   // END private function getCustomerByGroupID()
 
-    // Customer einlesen die in der angegebenen GruppenID enthalten sind
-    private function getCustomerByGroupID()
-    {
 
-        // Benötigte Daten vorhanden?
-        if ( (!isset($this->getGroupType)) || (strlen($this->getGroupType) < 1) )
-            return false;
 
 
-        // Dynamische Gruppen WHERE - Abfrage
-        $bool = false;
-        $add = '';
-        foreach ($this->SET_GROUP_ID_BY_TYPE[$this->getGroupType] as $curGroupID){
 
-            if (!$bool)
-                $add .= " WHERE GROUP_ID = '".$curGroupID."' ";
-            else
-                $add .= " OR GROUP_ID = '".$curGroupID."' ";
 
-            $bool = true;
+	// Dimari Datenbankverbindung herstellen
+	private function createDimariDBConnection()
+	{
 
-        }
+		$host = $this->host;
+		$username = $this->username;
+		$password = $this->password;
 
-        // Nur Customer einlesen die den entsprechenden Status haben
-        foreach ($this->SET_ACCOUNT_BY_STATUS_ID[$this->getGroupType] as $curStatusID) {
-            $add .= " AND STATUS_ID != '".$curStatusID."' ";
-        }
+		if (!($dbF = ibase_pconnect($host, $username, $password, 'ISO8859_1', 0, 3)))
+			die('Could not connect: ' . ibase_errmsg());
 
-            // Nur ein Beispielkunde?
-        if ( (isset($this->SET_EXAMPLE_CUSTOMER_ID)) && ($this->SET_EXAMPLE_CUSTOMER_ID > 0) ){
-            $add .= " AND CUSTOMER_ID = '".$this->SET_EXAMPLE_CUSTOMER_ID."' ";
-            $query = "SELECT * FROM CUSTOMER ". $add . " ORDER BY CUSTOMER_ID";
-        }
-        else
-            $query = "SELECT * FROM CUSTOMER " . $add . " ORDER BY CUSTOMER_ID";
+		$this->dbF = $dbF;
 
+		// Status festhalten:
+		$this->globalMessage['Status'][] = 'DB Verbindung Done!';
 
-        $result = ibase_query($this->dbF, $query);
+		return true;
 
-        $cnt = 0;
-        while ($row = ibase_fetch_object($result)) {
-            $cnt++;
+	}   // END private function createDimariDBConnection()
 
-            $this->globalData['fromDB']['CUSTOMER']['CUSTOMER_ID'][] = $row->CUSTOMER_ID;
-        }
 
-        ibase_free_result($result);
 
-        // Status festhalten:
-        $this->globalMessage['Status'][] = $cnt . ' Customer IDs wurden ausgewählt!';
 
-        return true;
 
-    }   // END private function getCustomerByGroupID()
 
+	private function getFormatDate($getDate = null)
+	{
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // Dimari Datenbankverbindung herstellen
-    private function createDimariDBConnection()
-    {
-
-        $host = $this->host;
-        $username = $this->username;
-        $password = $this->password;
-
-        if (!($dbF=ibase_pconnect($host, $username, $password, 'ISO8859_1', 0, 3)))
-            die('Could not connect: ' .  ibase_errmsg());
-
-        $this->dbF = $dbF;
-
-        // Status festhalten:
-        $this->globalMessage['Status'][] = 'DB Verbindung Done!';
-
-        return true;
-
-    }   // END private function createDimariDBConnection()
-
-
-
-
-
-
-    private function getFormatDate($getDate=null)
-    {
-
-        if (strlen($getDate) > 0)
-            $getDate = date("d.m.Y ", strToTime($getDate));
+		if (strlen($getDate) > 0)
+			$getDate = date("d.m.Y ", strToTime($getDate));
 
 //        else
 //            $getDate = '';
 
-        return $getDate;
+		return $getDate;
 
-    }   // END private function getFormatDate($getDate)
-
-
-
+	}   // END private function getFormatDate($getDate)
 
 
 }   // END class Dimari

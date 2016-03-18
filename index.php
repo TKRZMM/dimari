@@ -22,7 +22,6 @@ $hDimari = new DimariExp($host, $username, $password, $hostRadi, $usernameRadi, 
 
 
 
-
 // Setzte Gruppen-Type auf FTTC bzw. FTTH
 $hDimari->setExportType = 'FTTC';
 
@@ -35,6 +34,15 @@ $hDimari->initialGetFTTCServices();
 
 
 
+
+
+for ($i = 0; $i < 10; $i++) {
+	print ('hallo<br>');
+
+
+	echo "<br><br><hr>Hallo";
+
+}
 
 // Debug ausgeben:
 
