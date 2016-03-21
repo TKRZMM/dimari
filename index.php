@@ -6,6 +6,13 @@
  * Time: 08:28
  */
 
+$type = 'FTTC';
+
+
+////////////////////////////// Ab hier keine Edit nötig //////////////////////////////////////////
+
+
+
 include 'includes/head.php';
 
 // Settings laden
@@ -16,20 +23,18 @@ include 'includes/config.inc.php';
 include 'includes/classLoader.php';
 
 
-// KLassen - Objekt erzeugen
-// $hDimari = new Dimari($host, $username, $password);
-$hDimari = new DimariExp($host, $username, $password, $hostRadi, $usernameRadi, $passwordRadi);
+if ($type == 'FTTC') {
+	// KLassen - Objekt erzeugen
+	// $hDimari = new Dimari($host, $username, $password);
+	$hDimari = new DimariExp($host, $username, $password, $hostRadi, $usernameRadi, $passwordRadi);
 
 
+	// Setzte Gruppen-Type auf FTTC bzw. FTTH
+	$hDimari->setExportType = $type;
 
-// Setzte Gruppen-Type auf FTTC bzw. FTTH
-$hDimari->setExportType = 'FTTC';
-
-
-
-// Initial Methode aufrufen:
-$hDimari->initialGetFTTCServices();
-
+	// Initial Methode aufrufen:
+	$hDimari->initialGetFTTCServices();
+}
 
 // Debug ausgeben:
 

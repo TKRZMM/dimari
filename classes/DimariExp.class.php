@@ -29,7 +29,7 @@ class DimariExp extends Dimari
 	}   // END public function __construct(...)
 
 
-	
+
 
 
 
@@ -66,13 +66,13 @@ class DimariExp extends Dimari
 		$excel = $this->writeToExcelHeadline();
 
 		// Durchlauf 0 ... Headline schreiben
-		foreach ($this->globalOut as $cntRow => $dataArray) {
+		foreach($this->globalOut as $cntRow => $dataArray) {
 
 			// echo "Zeile: " . $cntRow . "<br>";
 
 			$leadingPipe = false;
 
-			foreach ($dataArray as $fieldname => $value) {
+			foreach($dataArray as $fieldname => $value) {
 
 				//echo "Feldname: " . $fieldname . " => Value: " . $value . "<br>";
 
@@ -97,17 +97,56 @@ class DimariExp extends Dimari
 //        echo "</pre><br>";
 
 		// Datei schreiben:
-		$downloadLink = 'DimariDiensteExpFTTC_20160318';
-
-		// '/var/www/html/www/uploads/';
-		$storeFile = 'uploads/' . $downloadLink . '.csv';
-
-		$fp = fopen($storeFile, 'w');
-		fwrite($fp, $excel);
-		fclose($fp);
+		$curFilename = $this->writeFile($this->setExportType, $excel);
 
 		return true;
 	}
+
+
+
+
+
+
+	// Schreibt die Export Datei mit Format Version und Datum
+	public function writeFile($type, $content, $filename = false)
+	{
+
+		if (!$filename)
+			$filename = 'DimariDiensteExp_' . $type . '_' . 'V001_' . date('Ymd');
+
+		// '/var/www/html/www/uploads/';
+		$fullFilePathAndName = 'uploads/exports/' . $filename . '.csv';
+
+
+		// Existiert Datei schon? ... wenn ja, Version erhöhen
+		if (file_exists($fullFilePathAndName)) {
+
+			// Versionsnummer ermitteln
+			preg_match('/(_V(\d+))/', $filename, $matches);
+			$fileVersion = $matches[2];
+
+			$nextVersion = $fileVersion + 1;
+			$nextVersion = sprintf("%'.03d", $nextVersion);
+
+			$filename = 'DimariDiensteExp_' . $type . '_V' . $nextVersion . '_' . date('Ymd');
+
+			// Für die Info-Ausgabe
+			$this->globalLastFilename = $filename;
+
+			// Selbstaufruf ... endet wenn freie Versionsnummer gefunden wurde
+			$this->writeFile($type, $content, $filename);
+		} else {
+			// Für die Info-Ausgabe
+			$this->globalLastFilename = $filename;
+
+			$fp = fopen($fullFilePathAndName, 'w');
+			fwrite($fp, $content);
+			fclose($fp);
+		}
+
+		return true;
+
+	}    // END public function writeFile($type, $content, $filename=false)
 
 
 
@@ -120,13 +159,13 @@ class DimariExp extends Dimari
 		$excel = '';
 
 		// Durchlauf 0 ... Headline schreiben
-		foreach ($this->globalOut as $cntRow => $dataArray) {
+		foreach($this->globalOut as $cntRow => $dataArray) {
 
 			// echo "Zeile: " . $cntRow . "<br>";
 
 			$leadingPipe = false;
 
-			foreach ($dataArray as $fieldname => $value) {
+			foreach($dataArray as $fieldname => $value) {
 
 				//echo "Feldname: " . $fieldname . " => Value: " . $value . "<br>";
 
@@ -163,11 +202,11 @@ class DimariExp extends Dimari
 		$exp = array();
 
 		// Haupt - Durchlauf
-		foreach ($this->globalData as $preCurCustomerID => $mainCustomerArray) {
+		foreach($this->globalData as $preCurCustomerID => $mainCustomerArray) {
 
 
 			// Durchlauf Customer
-			foreach ($mainCustomerArray['CUSTOMER_ID'] as $curCustomerID => $customerArray) {
+			foreach($mainCustomerArray['CUSTOMER_ID'] as $curCustomerID => $customerArray) {
 				if (isset($customerArray['KUNDEN_NR'])) {
 
 
@@ -217,7 +256,7 @@ class DimariExp extends Dimari
 					$this->addExp($customerArray, 'VOIP_PORT_ABG_CARRIER', $exp, $cntRowEntry);
 					$this->addExp($customerArray, 'VOIP_PORT_REST_MSN_KUENDIGEN', $exp, $cntRowEntry);  // 40
 
-					for ($i = 1; $i <= 3; $i++) {
+					for($i = 1; $i <= 3; $i++) {
 						$this->addExp($customerArray, 'VOIP_ACCOUNT_' . $i, $exp, $cntRowEntry);
 						$this->addExp($customerArray, 'VOIP_ACCOUNT_PASSWORT_' . $i, $exp, $cntRowEntry);
 						$this->addExp($customerArray, 'VOIP_NATIONAL_VORWAHL_' . $i, $exp, $cntRowEntry);
@@ -238,7 +277,7 @@ class DimariExp extends Dimari
 					$this->addExp($customerArray, 'TELEBUCH_SPERRE_INVERS', $exp, $cntRowEntry);
 					$this->addExp($customerArray, 'TELEBUCH_EINTRAG_ELEKT', $exp, $cntRowEntry);
 
-					for ($i = 4; $i <= 10; $i++) {
+					for($i = 4; $i <= 10; $i++) {
 						$this->addExp($customerArray, 'VOIP_ACCOUNT_' . $i, $exp, $cntRowEntry);
 						$this->addExp($customerArray, 'VOIP_ACCOUNT_PASSWORT_' . $i, $exp, $cntRowEntry);
 						$this->addExp($customerArray, 'VOIP_NATIONAL_VORWAHL_' . $i, $exp, $cntRowEntry);
@@ -249,6 +288,7 @@ class DimariExp extends Dimari
 					$this->addExp($customerArray, 'VOIP_ABG_PORT_TERMIN', $exp, $cntRowEntry);
 					$this->addExp($customerArray, 'VOIP_ABG_PORT_AUF_CARRIER', $exp, $cntRowEntry);
 					$this->addExp($customerArray, 'DSLAM_PORT', $exp, $cntRowEntry);
+					$this->addExp($customerArray, 'TELEFONBUCH_UMFANG', $exp, $cntRowEntry);
 
 				}
 			}   // END // Durchlauf Customer
@@ -306,7 +346,7 @@ class DimariExp extends Dimari
 
 
 		// Durchlauf Customer
-		foreach ($this->globalData['CUSTOMER_ID_Array'] as $curCustomerID => $customerArray) {
+		foreach($this->globalData['CUSTOMER_ID_Array'] as $curCustomerID => $customerArray) {
 
 			$cntSubOnSingleCustomer = 0;
 
@@ -333,8 +373,15 @@ class DimariExp extends Dimari
 			$curDataSet['CUSTOMER_ID'][$curCustomerID]['STANDORT'] = 'KD';
 
 
+			// TELEFONBUCH_UMFANG
+			if (isset($customerArray['TELEFONBUCH_UMFANG']))
+				$curDataSet['CUSTOMER_ID'][$curCustomerID]['TELEFONBUCH_UMFANG'] = $customerArray['TELEFONBUCH_UMFANG'];
+			else
+				$curDataSet['CUSTOMER_ID'][$curCustomerID]['TELEFONBUCH_UMFANG'] = '';
+
+
 			// Durchlauf Contract
-			foreach ($customerArray['CONTRACT_ID'] as $curContractID => $contractArray) {
+			foreach($customerArray['CONTRACT_ID'] as $curContractID => $contractArray) {
 
 				$cntContractOnStart++;
 				// echo "$curContractID<br>";
@@ -377,13 +424,13 @@ class DimariExp extends Dimari
 
 				// Durchlauf Products
 				if ((isset($contractArray['PRODUCT_ID'])) && (count($contractArray['PRODUCT_ID']) > 0)) {
-					foreach ($contractArray['PRODUCT_ID'] as $curProductID => $productArray) {
+					foreach($contractArray['PRODUCT_ID'] as $curProductID => $productArray) {
 
 						$cntProductOnStart++;
 						// echo "$curProductID<br>";
 
 
-						// DATEN EBEME PRODUCT
+						// DATEN EBENE PRODUCT
 
 
 						// VDSL Produkt?
@@ -410,7 +457,7 @@ class DimariExp extends Dimari
 
 						// Durchlauf COV_ID
 						if ((isset($productArray['COV_ID'])) && (count($productArray['COV_ID']) > 0)) {
-							foreach ($productArray['COV_ID'] as $curCOV_ID => $covIDArray) {
+							foreach($productArray['COV_ID'] as $curCOV_ID => $covIDArray) {
 
 								$cntCovIDOnStart++;
 								// echo "$curCOV_ID<br>";
@@ -434,7 +481,7 @@ class DimariExp extends Dimari
 
 								// Durchlauf SUBS_ID
 								if ((isset($covIDArray['SUBS_ID'])) && (count($covIDArray['SUBS_ID']) > 0)) {
-									foreach ($covIDArray['SUBS_ID'] as $curSUBS_ID => $subsIDArray) {
+									foreach($covIDArray['SUBS_ID'] as $curSUBS_ID => $subsIDArray) {
 
 										$cntSubIDOnStart++;
 										// echo "$curSUBS_ID<br>";
@@ -551,15 +598,20 @@ class DimariExp extends Dimari
 
 			// DATEN EBENE CUSTOMER
 
-			// Setze INSTALLATIONSTERMIN
-			if (isset($curDataSet['CUSTOMER_ID'][$curCustomerID]['VOIP_PORT_TERMIN']))
-				$curDataSet['CUSTOMER_ID'][$curCustomerID]['INSTALLATIONSTERMIN'] = $curDataSet['CUSTOMER_ID'][$curCustomerID]['VOIP_PORT_TERMIN'];
-			else {
+			// Setze INSTALLATIONSTERMIN Doppelt abgefangen
+			// Hab noch keinen Installationstermin gesetz, weiche aus auf ... GUELTIG_VON... VOIP_PORT_TERMIN... wenn möglich
+			if ((!isset($curDataSet['CUSTOMER_ID'][$curCustomerID]['INSTALLATIONSTERMIN'])) || (strlen($curDataSet['CUSTOMER_ID'][$curCustomerID]['INSTALLATIONSTERMIN']) < 1)) {
 
-				if (isset($curDataSet['CUSTOMER_ID'][$curCustomerID]['GUELTIG_VON']))
+
+				// GUELTIG_VON eventuell gesetzt?
+				if ((isset($curDataSet['CUSTOMER_ID'][$curCustomerID]['GUELTIG_VON'])) && (strlen($curDataSet['CUSTOMER_ID'][$curCustomerID]['GUELTIG_VON']) > 0)) {
 					$curDataSet['CUSTOMER_ID'][$curCustomerID]['INSTALLATIONSTERMIN'] = $curDataSet['CUSTOMER_ID'][$curCustomerID]['GUELTIG_VON'];
-				else
-					$curDataSet['CUSTOMER_ID'][$curCustomerID]['INSTALLATIONSTERMIN'] = '';
+				} else {
+					if (isset($curDataSet['CUSTOMER_ID'][$curCustomerID]['VOIP_PORT_TERMIN']))
+						$curDataSet['CUSTOMER_ID'][$curCustomerID]['INSTALLATIONSTERMIN'] = $curDataSet['CUSTOMER_ID'][$curCustomerID]['VOIP_PORT_TERMIN'];
+					else
+						$curDataSet['CUSTOMER_ID'][$curCustomerID]['INSTALLATIONSTERMIN'] = '';
+				}
 			}
 
 
@@ -662,7 +714,8 @@ class DimariExp extends Dimari
 
 		// Setze Optionen:
 		$curDataSet['CUSTOMER_ID'][$curCustomerID]['OPTION_1'] = '';
-		$curDataSet['CUSTOMER_ID'][$curCustomerID]['OPTION_2'] = '';
+		// HARDCODE OPTION_2 auf 7
+		$curDataSet['CUSTOMER_ID'][$curCustomerID]['OPTION_2'] = '7';
 		$curDataSet['CUSTOMER_ID'][$curCustomerID]['OPTION_3'] = '';
 
 

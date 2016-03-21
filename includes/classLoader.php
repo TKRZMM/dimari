@@ -7,9 +7,14 @@
  */
 
 
-// KLasse Dimari laden
-include 'classes/Dimari.class.php';
+// FTTC - KLassen - laden
+if ($type == 'FTTC'){
+	// KLasse Dimari laden
+	include 'classes/Dimari.class.php';
 
 
-// Klasse DimariExport laden
-include 'classes/DimariExp.class.php';
+	// Klasse DimariExport laden
+	include 'classes/DimariExp.class.php';
+}
+
+

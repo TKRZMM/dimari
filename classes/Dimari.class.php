@@ -60,7 +60,7 @@ class Dimari
 	public $globalData = array();
 	public $globalDataTMP = array();
 	public $globalCarrierData = array();
-
+	public $globalLastFilename = ''; // Erzeugte Datei
 
 	// Export Typ wird hier gespeichert (FTTC oder FTTH)
 	// !!! Muss ausserhalb der Klasse gesetzt werden
@@ -238,9 +238,11 @@ class Dimari
 		$this->flushByFunctionCall('writeToExcel');
 
 
-//        echo "<pre>";
-//        print_r($this->globalData);
-//        echo "</pre><br>";
+		print ('<br>Erzeugte Datei: <a href="uploads/exports/' . $this->globalLastFilename . '.csv">' . $this->globalLastFilename . '</a>');
+
+//		echo "<pre>";
+//		print_r($this->globalData);
+//		echo "</pre><br>";
 
 
 		$this->outNow('Ende', '', 'Info');
@@ -335,7 +337,7 @@ class Dimari
 		$myData = array();
 
 		// Lese .csv - Datei ein
-		$filepath = 'uploads/ParseMe.csv';
+		$filepath = 'uploads/ParseMePurtel.csv';
 		$myData = $this->readDataFromExcelPhone($filepath);
 
 
@@ -361,11 +363,18 @@ class Dimari
 				// VOIP_PORTIERUNG updaten?
 				if (strlen($dataSetArray[14]) > 0) {
 					if (isset($this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_PORTIERUNG'])) {
-						if ($this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_PORTIERUNG'] == 'N') {
+
+						if ($this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_PORTIERUNG'] == 'J') {
+							// Nichts machen haben schon Flag durch die Dimari DB!
+						} else {
 
 							// Setze aktuellen und richtigen Status
-							$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_PORTIERUNG'] = 'J';
+							$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_PORTIERUNG'] = 'N';
 						}
+					} else {
+						// DEFAULT
+						// Lass ich offen... unklar was dann gesetzt werden müsste
+						$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_PORTIERUNG'] = 'N';
 					}
 				}   // END // VOIP_PORTIERUNG updaten?
 
@@ -466,8 +475,6 @@ class Dimari
 
 
 
-
-
 				// ROUTER_SERIEN_NR & ROUTER_MODELL
 				if (strlen($dataSetArray[21]) > 0) {
 
@@ -498,7 +505,6 @@ class Dimari
 					$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['PURTEL_KUNDENNUMMER'] = $curCustomerID;
 
 				}   // END // PURTEL_HAUPTANSCHLUSS & PURTEL_KUNDENNUMMER
-
 
 
 
@@ -1145,6 +1151,12 @@ class Dimari
 							if (in_array($row->PHONE_BOOK_ENTRY_ID, $this->setPhoneBookIDs)) {
 								$this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['TELEFONBUCHEINTRAG'] = $row->PHONE_BOOK_ENTRY_ID;
 								$this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$curContractID]['PhoneBookFlagFromCO_VOICEDATA'] = 'yes';
+
+								if ($row->PHONE_BOOK_ENTRY_ID == '10001')
+									$this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['TELEFONBUCH_UMFANG'] = 'A';
+								elseif ($row->PHONE_BOOK_ENTRY_ID == '10002')
+									$this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['TELEFONBUCH_UMFANG'] = 'V';
+
 							} else
 								$this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['TELEFONBUCHEINTRAG'] = '';
 
@@ -1419,6 +1431,7 @@ class Dimari
 				$this->globalDataTMP['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$row->CO_ID]['CONTRACT_ID'] = $row->CO_ID;
 
 				$this->globalDataTMP['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$row->CO_ID]['GUELTIG_VON'] = $this->getFormatDate($row->DATE_ACTIVE);
+				$this->globalDataTMP['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$row->CO_ID]['INSTALLATIONSTERMIN'] = $this->getFormatDate($row->DATE_ACTIVE);
 				$this->globalDataTMP['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$row->CO_ID]['GUELTIG_BIS'] = $this->getFormatDate($row->DATE_DEACTIVE);
 				$this->globalDataTMP['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$row->CO_ID]['ERFASST_AM'] = $this->getFormatDate($row->DATE_CREATED);
 				$this->globalDataTMP['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$row->CO_ID]['UNTERZEICHNET_AM'] = $this->getFormatDate($row->DATE_SIGNED);
