@@ -530,7 +530,7 @@ class Dimari
 	// Lese Excelfile und gebe die Daten lesbar zurück
 	private function readDataFromExcelPhone($filepath)
 	{
-
+		$myData = array();
 		$myNewData = array();
 		$preData = file($filepath);
 
