@@ -1138,7 +1138,7 @@ class Dimari
 
 
 							// EGN_VERFREMDUNG
-							if ($row->ANONYMISATION == 1)
+							if ($row->IB_REDUCED == '1')
 								$val = 'J';
 							else
 								$val = 'N';
