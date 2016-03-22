@@ -100,7 +100,7 @@ class Dimari
 	//private $onlyExampleCustomerID = '20010686';
 
 	// Tester
-	//private $onlyExampleCustomerID = '20010603';
+//	private $onlyExampleCustomerID = '20010798';
 
 
 
@@ -395,7 +395,7 @@ class Dimari
 
 
 
-				// VOIP Kopfnummer und Vorwahl
+				// VOIP Kopfnummer und Vorwahl & PURTEL_KUNDENNUMMER
 				if (strlen($dataSetArray[16]) > 0) {
 
 					$tmpFullNumber = trim($dataSetArray[16]);
@@ -422,6 +422,9 @@ class Dimari
 						// Setze VOIP_NATIONAL_VORWAHL_1
 						$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_NATIONAL_VORWAHL_1'] = $curVOIP_NATIONAL_VORWAHL_1;
 					}
+
+					// Setze PURTEL_KUNDENNUMMER
+					$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['PURTEL_KUNDENNUMMER'] = $curCustomerID;
 
 				}   // END VOIP Kopfnummer und Vorwahl
 
@@ -494,15 +497,12 @@ class Dimari
 
 
 				// PURTEL_HAUPTANSCHLUSS & PURTEL_KUNDENNUMMER
-				if (strlen($dataSetArray[16]) > 0) {
+				if (strlen($dataSetArray[15]) > 0) {
 
-					$curPURTEL_HAUPTANSCHLUSS = trim($dataSetArray[16]);
+					$curPURTEL_HAUPTANSCHLUSS = trim($dataSetArray[15]);
 
 					// Setze PURTEL_HAUPTANSCHLUSS
 					$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['PURTEL_HAUPTANSCHLUSS'] = $curPURTEL_HAUPTANSCHLUSS;
-
-					// Setze PURTEL_KUNDENNUMMER
-					$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['PURTEL_KUNDENNUMMER'] = $curCustomerID;
 
 				}   // END // PURTEL_HAUPTANSCHLUSS & PURTEL_KUNDENNUMMER
 
@@ -585,7 +585,14 @@ class Dimari
 				// Radius Username vorhanden? ... Dann Daten aus Radius lesen
 				if ((isset($customerArray['RADIUS_PRE_USERNAME'])) && (strlen($customerArray['RADIUS_PRE_USERNAME']) > 0)) {
 
-					$query = "SELECT * FROM radcheck WHERE `username` = '" . $customerArray['RADIUS_PRE_USERNAME'] . "' LIMIT 1";
+					$query = "SELECT	ui.id		AS UserInfoID,
+ 										ui.username AS UserInfoUsername,
+ 										ui.lastname AS UserInfoLastname,
+ 										rc.id		AS RadcheckID,
+ 										rc.value	AS RadcheckValue
+ 								  FROM userinfo ui
+ 								   LEFT JOIN radcheck rc ON rc.id = ui.id
+ 								   WHERE ui.lastname = '".$curCustomerID."' LIMIT 1";
 
 					$result = $DBObject->query($query);
 
@@ -594,10 +601,11 @@ class Dimari
 
 						$row = $result->fetch_object();
 
-						$curDATEN_USERPASSWORT = $row->value;
-						$curUSERINFO_ID = $row->id;
+						$curDaten_USERNAME = $row->UserInfoUsername;
+						$curDATEN_USERPASSWORT = $row->RadcheckValue;
+						$curUSERINFO_ID = $row->UserInfoID;
 
-						$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['DATEN_USERNAME'] = $customerArray['RADIUS_PRE_USERNAME'];
+						$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['DATEN_USERNAME'] = $curDaten_USERNAME;
 						$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['DATEN_USERPASSWORT'] = $curDATEN_USERPASSWORT;
 						$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['USERINFO_ID'] = $curUSERINFO_ID;
 
@@ -651,10 +659,10 @@ class Dimari
 			if (array_key_exists($curCustomerID, $this->globalData)) {
 
 				// Daten hinzufügen:
-				$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['RADIUS_PRE_FIRSTNAME'] = $row->FIRSTNAME;
-				$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['RADIUS_PRE_SURNAME'] = $row->NAME;
+				$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['RADIUS_PRE_FIRSTNAME'] 	= $row->FIRSTNAME;
+				$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['RADIUS_PRE_SURNAME'] 		= $row->NAME;
 				$radiusUsername = $this->getRadiusUsernameByFirstSurname($row->FIRSTNAME, $row->NAME);
-				$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['RADIUS_PRE_USERNAME'] = $radiusUsername;
+				$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['RADIUS_PRE_USERNAME'] 	= $radiusUsername;
 			}
 		}
 

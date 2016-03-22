@@ -265,7 +265,7 @@ class DimariExp extends Dimari
 					}
 
 					$this->addExp($customerArray, 'EGN_VERFREMDUNG', $exp, $cntRowEntry);
-					$this->addExp($customerArray, 'TELEFONBUCHEINTRAG', $exp, $cntRowEntry);
+					$this->addExp($customerArray, 'TELEFONBUCHEINTRAG', $exp, $cntRowEntry ,'N');
 					$this->addExp($customerArray, 'TELEBUCH_NACHNAME', $exp, $cntRowEntry);
 					$this->addExp($customerArray, 'TELEBUCH_VORNAME', $exp, $cntRowEntry);
 					$this->addExp($customerArray, 'TELEBUCH_STRASSE', $exp, $cntRowEntry);    // 60
@@ -316,13 +316,13 @@ class DimariExp extends Dimari
 
 
 	// Fügt Daten an das Ausgabe Array an
-	private function addExp($customerArray, $fieldname, & $exp, $cntRowEntry)
+	private function addExp($customerArray, $fieldname, & $exp, $cntRowEntry, $default='')
 	{
 
 		if (isset($customerArray[$fieldname]))
 			$exp[$cntRowEntry][$fieldname] = $customerArray[$fieldname];
 		else
-			$exp[$cntRowEntry][$fieldname] = '';
+			$exp[$cntRowEntry][$fieldname] = $default;
 
 		return true;
 
