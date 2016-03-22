@@ -100,7 +100,7 @@ class Dimari
 	//private $onlyExampleCustomerID = '20010686';
 
 	// Tester
-//	private $onlyExampleCustomerID = '20010798';
+	//private $onlyExampleCustomerID = '20010603';
 
 
 
@@ -295,18 +295,6 @@ class Dimari
 								// VOIP_TRANSACTION_NO_1
 								$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_TRANSACTION_NO_1'] = $valArray[1];
 
-								// Hardcode
-								// VOIP_EXT_PRODUKT_ID
-								$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_EXT_PRODUKT_ID'] = '771';
-
-								// Hardcode
-								// VOIP_DIENST_BEZEICHNUNG
-								$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_DIENST_BEZEICHNUNG'] = 'TKRZ Telefonie';
-
-								// Hardcode
-								// VOIP_DIENST_BEMERKUNG
-								$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_DIENST_BEMERKUNG'] = 'Bei Purtel';
-
 								// ??? break;
 							}
 
@@ -357,7 +345,8 @@ class Dimari
 
 
 				// Setzte TELEFONBUCHEINTRAG ... auf N bei Purtel Kunden
-				$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['TELEFONBUCHEINTRAG'] = 'N';
+				if (!isset($this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['TELEFONBUCHEINTRAG']))
+					$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['TELEFONBUCHEINTRAG'] = 'N';
 
 
 				// VOIP_PORTIERUNG updaten?
@@ -390,6 +379,18 @@ class Dimari
 
 					// Flagge mir den Eintrag als Puretel - Kunde
 					$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_ACCOUNT_1_FROM_PURETEL'] = 'yes';
+
+					// Hardcode "VOIP_EXT_PRODUKT_ID"  -> 771
+					// VOIP_EXT_PRODUKT_ID
+					$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_EXT_PRODUKT_ID'] = '771';
+
+					// Hardcode "VOIP_DIENST_BEZEICHNUNG" -> TKRZ Telefonie
+					// VOIP_DIENST_BEZEICHNUNG
+					$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_DIENST_BEZEICHNUNG'] = 'TKRZ Telefonie';
+
+					// Hardcode "VOIP_DIENST_BEMERKUNGB" -> Bei Purtel
+					// VOIP_DIENST_BEMERKUNG
+					$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_DIENST_BEMERKUNG'] = ' ';
 
 				}   // END // HAUPTVERTEILER
 
@@ -487,7 +488,7 @@ class Dimari
 					$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['ROUTER_SERIEN_NR'] = $curROUTER_SERIEN_NR;
 
 
-					// HARDCODE
+					// Hardcode Fritz Box 7xxx
 					$curROUTER_MODELL = 'Fritz Box 7xxx';
 
 					// Setze ROUTER_MODELL
