@@ -292,6 +292,20 @@ class DimariExp extends Dimari
 					$this->addExp($customerArray, 'DSLAM_PORT', $exp, $cntRowEntry);
 					$this->addExp($customerArray, 'TELEFONBUCH_UMFANG', $exp, $cntRowEntry);
 
+
+					// $this->addExp($customerArray, 'COS_ID', $exp, $cntRowEntry);
+					$this->addExp($customerArray, 'TV_DIENSTE', $exp, $cntRowEntry);
+					$this->addExp($customerArray, 'ROUTER_MAC_ADR', $exp, $cntRowEntry);
+					$this->addExp($customerArray, 'FTTH_CUS_ID', $exp, $cntRowEntry);
+					$this->addExp($customerArray, 'DOCSIS', $exp, $cntRowEntry);
+					$this->addExp($customerArray, 'BRIDGE_MODE', $exp, $cntRowEntry);
+					$this->addExp($customerArray, 'ELVIS_HAUPT_ACCOUNT', $exp, $cntRowEntry);
+					$this->addExp($customerArray, 'CPE_VOIP_ACCOUNT_2', $exp, $cntRowEntry);
+					$this->addExp($customerArray, 'BANDBREITE', $exp, $cntRowEntry);
+					$this->addExp($customerArray, 'CUST_ID', $exp, $cntRowEntry);
+
+
+
 				}
 			}   // END // Durchlauf Customer
 
@@ -391,6 +405,9 @@ class DimariExp extends Dimari
 
 				// DATEN EBENE CONTRACT
 
+				// Setze CUST_ID ... CONTRACT_ID
+				// $curDataSet['CUSTOMER_ID'][$curCustomerID]['CUST_ID'] = $contractArray['CONTRACT_ID'];
+
 
 				// Setze GUELTIG_VON
 				if (isset($contractArray['GUELTIG_VON']))
@@ -479,6 +496,9 @@ class DimariExp extends Dimari
 								// Setze Ext_Produkt_ID
 								$curDataSet['CUSTOMER_ID'][$curCustomerID]['VOIP_EXT_PRODUKT_ID'] = $this->setExtProdServiceID['setProductIDForVOIP'];
 
+
+								// Setze COS_ID
+								$curDataSet['CUSTOMER_ID'][$curCustomerID]['COS_ID'] = $productArray['COS_ID'];
 
 
 								// Durchlauf SUBS_ID

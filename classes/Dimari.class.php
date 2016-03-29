@@ -17,7 +17,14 @@ class Dimari
 	// Tabelle: CUSTOMER_GROUP
 	// Feld:    GROUP_ID
 	public $setCustomerByGroupID = array('FTTC' => array('100011'),
-										 'FTTH' => array()
+										 'FTTH' => array('100001',
+														 '100002',
+														 '100005',
+														 '100006',
+														 '100007',
+														 '100008',
+														 '100010',
+														 )
 	);
 
 
@@ -31,6 +38,8 @@ class Dimari
 
 
 	// Nummern für Produkte die für Internet wichtig sind ... u.a. nur diese Daten werden gezogen
+	// Tabelle: PRODUCTS
+	// Feld: PRODUCT_ID
 	public $setProductIDForInternet = array('FTTC' => array('10070', '10059',),
 											'FTTH' => array()
 	);
@@ -102,7 +111,7 @@ class Dimari
 	//private $onlyExampleCustomerID = '20010686';
 
 	// Tester
-//	private $onlyExampleCustomerID = '20010897';
+	//private $onlyExampleCustomerID = '20010897';
 
 
 
@@ -205,9 +214,9 @@ class Dimari
 		$this->flushByFunctionCall('getSubscriberByCOVID');
 
 
+
 		// Telefonbucheinträge ermitteln
 		$this->flushByFunctionCall('getPhoneBookEntrysByCustomerID');
-
 
 
 		// Daten erste Aufbereitung
@@ -1038,7 +1047,6 @@ class Dimari
 
 		$this->addMessage('&sum; Exportfähige Kunden ', $cntExpCustomer, 'Sum');
 
-
 		return true;
 
 	}   // END  private function getSubscriberByCOVID()
@@ -1322,10 +1330,25 @@ class Dimari
 				$add .= $addPhone;
 
 
+//				$query = "SELECT cop.CO_ID          AS CO_ID,
+//                                 cop.CO_PRODUCT_ID  AS CO_PRODUCT_ID,
+//                                 p.DESCRIPTION      AS DESCRIPTION,
+//                                 p.PRODUCT_ID       AS PRODUCT_ID,
+//                                 cop.DATE_ACTIVE    AS COPDATE_ACTIVE,
+//                                 cop.DATE_DEACTIVE  AS COPDATE_DEACTIVE,
+//                                 a.ACCOUNTNO        AS ACCOUNTNO,
+//                                 a.DESCRIPTION      AS ADESCRIPTION
+//                            FROM CO_PRODUCTS cop
+//                              LEFT JOIN PRODUCTS p  ON p.PRODUCT_ID  = cop.PRODUCT_ID
+//                              LEFT JOIN ACCOUNTS a  ON a.ACCOUNTNO   = p.ACCOUNTNO
+//                            " . $add . "
+//                            ORDER BY cop.CO_PRODUCT_ID";
+
 				$query = "SELECT cop.CO_ID          AS CO_ID,
                                  cop.CO_PRODUCT_ID  AS CO_PRODUCT_ID,
                                  p.DESCRIPTION      AS DESCRIPTION,
                                  p.PRODUCT_ID       AS PRODUCT_ID,
+                                 p.PRODUCT_CODE		AS COS_ID,
                                  cop.DATE_ACTIVE    AS COPDATE_ACTIVE,
                                  cop.DATE_DEACTIVE  AS COPDATE_DEACTIVE,
                                  a.ACCOUNTNO        AS ACCOUNTNO,
@@ -1354,6 +1377,9 @@ class Dimari
 
 					$this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$curContractID]['PRODUCT_ID'][$row->PRODUCT_ID]['COPDATE_ACTIVE'] = $row->COPDATE_ACTIVE;
 					$this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$curContractID]['PRODUCT_ID'][$row->PRODUCT_ID]['DATE_DEACTIVE'] = $row->COPDATE_DEACTIVE;
+
+
+					$this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$curContractID]['PRODUCT_ID'][$row->PRODUCT_ID]['COS_ID'] = $row->COS_ID;
 
 					$boolGotData = true;
 
