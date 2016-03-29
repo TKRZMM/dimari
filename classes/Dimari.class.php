@@ -95,12 +95,14 @@ class Dimari
 	// 0 für keine Einschränkung beim Limit
 	public $setReadLimitCustomer = 0;
 
+	// Wenn ja... wird keine Ausgabe - Datei erzeugt
+	public $setNoFileCreation = 'no';
 
 	// PurTel Kunde
 	//private $onlyExampleCustomerID = '20010686';
 
 	// Tester
-	//private $onlyExampleCustomerID = '20010603';
+//	private $onlyExampleCustomerID = '20010897';
 
 
 
@@ -623,13 +625,21 @@ class Dimari
 					mysqli_free_result($result);
 
 				}
+				else {
+					$cntNoRadData++;
+
+					// echo $cntNoRadData . " Habe user nicht im Radiusserver gefunden: KDNr. " . $curCustomerID . " Authname " . $customerArray['RADIUS_PRE_USERNAME']."<br>";
+					// Setze Flag auf ... noch nicht angelegt
+					$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['DATEN_USERNAME'] = '';
+					$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['DATEN_USERPASSWORT'] = '';
+					$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['USERINFO_ID'] = '-1';
+				}
 
 
 			}   // END   // Durchlauf CustomerID
 
 
 		}   // END // Durchlauf Main ... CustomerID
-
 
 		return true;
 

@@ -139,9 +139,11 @@ class DimariExp extends Dimari
 			// Für die Info-Ausgabe
 			$this->globalLastFilename = $filename;
 
-			$fp = fopen($fullFilePathAndName, 'w');
-			fwrite($fp, $content);
-			fclose($fp);
+			if ($this->setNoFileCreation != 'yes'){
+				$fp = fopen($fullFilePathAndName, 'w');
+				fwrite($fp, $content);
+				fclose($fp);
+			}
 		}
 
 		return true;
