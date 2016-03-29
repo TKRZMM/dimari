@@ -1,7 +1,6 @@
 <?php
 
 
-
 /**
  * Created by PhpStorm.
  * User: MMelching
@@ -24,7 +23,7 @@ class Dimari
 														 '100007',
 														 '100008',
 														 '100010',
-														 )
+										 )
 	);
 
 
@@ -141,6 +140,10 @@ class Dimari
 		$this->passwordRadi = $passwordRadi;
 
 	}   // END public function __construct(...)
+
+
+
+
 
 
 
@@ -267,6 +270,10 @@ class Dimari
 
 
 
+
+
+
+
 	// Transaction-Daten aus Excelliste holen
 	private function getDataFromExcelTransaction()
 	{
@@ -329,6 +336,10 @@ class Dimari
 
 
 
+
+
+
+
 	// Telefon-Daten aus Excelliste holen
 	private function getDataFromExcelPhone()
 	{
@@ -366,12 +377,14 @@ class Dimari
 
 						if ($this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_PORTIERUNG'] == 'J') {
 							// Nichts machen haben schon Flag durch die Dimari DB!
-						} else {
+						}
+						else {
 
 							// Setze aktuellen und richtigen Status
 							$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_PORTIERUNG'] = 'N';
 						}
-					} else {
+					}
+					else {
 						// DEFAULT
 						// Lass ich offen... unklar was dann gesetzt werden müsste
 						$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['VOIP_PORTIERUNG'] = 'N';
@@ -539,9 +552,14 @@ class Dimari
 
 
 
+
+
+
+
 	// Lese Excelfile und gebe die Daten lesbar zurück
 	private function readDataFromExcelPhone($filepath)
 	{
+
 		$myData = array();
 		$myNewData = array();
 		$preData = file($filepath);
@@ -561,6 +579,10 @@ class Dimari
 		return $myData;
 
 	}   // END private function readDataFromExcelPhone()
+
+
+
+
 
 
 
@@ -604,7 +626,7 @@ class Dimari
  										rc.value	AS RadcheckValue
  								  FROM userinfo ui
  								   LEFT JOIN radcheck rc ON rc.id = ui.id
- 								   WHERE ui.lastname = '".$curCustomerID."' LIMIT 1";
+ 								   WHERE ui.lastname = '" . $curCustomerID . "' LIMIT 1";
 
 					$result = $DBObject->query($query);
 
@@ -621,7 +643,8 @@ class Dimari
 						$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['DATEN_USERPASSWORT'] = $curDATEN_USERPASSWORT;
 						$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['USERINFO_ID'] = $curUSERINFO_ID;
 
-					} else {
+					}
+					else {
 						$cntNoRadData++;
 
 						// echo $cntNoRadData . " Habe user nicht im Radiusserver gefunden: KDNr. " . $curCustomerID . " Authname " . $customerArray['RADIUS_PRE_USERNAME']."<br>";
@@ -659,6 +682,10 @@ class Dimari
 
 
 
+
+
+
+
 	// Customer Vorname - Nachname einlesen
 	private function getNamesFromCustomer()
 	{
@@ -679,10 +706,10 @@ class Dimari
 			if (array_key_exists($curCustomerID, $this->globalData)) {
 
 				// Daten hinzufügen:
-				$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['RADIUS_PRE_FIRSTNAME'] 	= $row->FIRSTNAME;
-				$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['RADIUS_PRE_SURNAME'] 		= $row->NAME;
+				$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['RADIUS_PRE_FIRSTNAME'] = $row->FIRSTNAME;
+				$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['RADIUS_PRE_SURNAME'] = $row->NAME;
 				$radiusUsername = $this->getRadiusUsernameByFirstSurname($row->FIRSTNAME, $row->NAME);
-				$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['RADIUS_PRE_USERNAME'] 	= $radiusUsername;
+				$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['RADIUS_PRE_USERNAME'] = $radiusUsername;
 			}
 		}
 
@@ -691,6 +718,10 @@ class Dimari
 		return true;
 
 	}   // END private function getNamesFromCustomer()
+
+
+
+
 
 
 
@@ -724,6 +755,10 @@ class Dimari
 
 
 
+
+
+
+
 	// Formatiert Vor-Nachnamen nach Radius - Standard
 	private function getRadiusUserFormated($getName)
 	{
@@ -740,6 +775,10 @@ class Dimari
 		return $getName;
 
 	}   // END private function getRadiusUserFormated(...)
+
+
+
+
 
 
 
@@ -763,6 +802,10 @@ class Dimari
 		return $getVal;
 
 	} // END private function cleanSpecialChar($getVal)
+
+
+
+
 
 
 
@@ -881,6 +924,10 @@ class Dimari
 
 
 
+
+
+
+
 	// Ermittelt die Adressdaten für das Telefonbuch
 	public function getAddressPhoneBoockByCustomerIDAndTypeID($getCustomerID, $phoneBookEntryType)
 	{
@@ -903,7 +950,8 @@ class Dimari
 				$retArray['TELEBUCH_PLZ'] = $row->CITYCODE;
 				$retArray['TELEBUCH_ORT'] = $row->CITY;
 				$retArray['TELEBUCH_FAX'] = $row->FAX;
-			} else {
+			}
+			else {
 				$retArray['TELEBUCH_NACHNAME'] = $row->NAME;
 				$retArray['TELEBUCH_VORNAME'] = $row->FIRSTNAME;
 			}
@@ -913,6 +961,10 @@ class Dimari
 
 		return $retArray;
 	}
+
+
+
+
 
 
 
@@ -980,7 +1032,8 @@ class Dimari
 										$this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$curCOV_ID]['SUBS_ID'][$row->SUBS_ID]['TELEFONBUCHEINTRAG'] = 'J';
 										// Bool - Flag setzen:
 										$this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$curContractID]['PhoneBookFlagFromSubscriber'] = 'yes';
-									} else
+									}
+									else
 										$this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['COV_ID'][$curCOV_ID]['SUBS_ID'][$row->SUBS_ID]['TELEFONBUCHEINTRAG'] = 'N';
 
 
@@ -1056,6 +1109,10 @@ class Dimari
 
 
 
+
+
+
+
 	// Vorwahl extrahieren
 	public function getNatVorwahl($arg = 0)
 	{
@@ -1073,6 +1130,10 @@ class Dimari
 		return trim($val);
 
 	}   // END private function getNatVorwahl(...)
+
+
+
+
 
 
 
@@ -1102,11 +1163,15 @@ class Dimari
 
 
 
+
+
+
+
 	// Carrier Referenz einlesen
 	public function getCarrierRef()
 	{
 
-		$query = "SELECT * FROM CARRIER ORDER BY CARRIER_ID";
+		$query = 'SELECT * FROM CARRIER ORDER BY CARRIER_ID';
 
 		$result = ibase_query($this->dbF, $query);
 
@@ -1122,6 +1187,10 @@ class Dimari
 		return true;
 
 	}   // END private function getCarrierRef()
+
+
+
+
 
 
 
@@ -1184,7 +1253,8 @@ class Dimari
 								elseif ($row->PHONE_BOOK_ENTRY_ID == '10002')
 									$this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['TELEFONBUCH_UMFANG'] = 'V';
 
-							} else
+							}
+							else
 								$this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$curContractID]['PRODUCT_ID'][$curProductID]['TELEFONBUCHEINTRAG'] = '';
 
 
@@ -1210,7 +1280,8 @@ class Dimari
 
 
 						}
-					} else {
+					}
+					else {
 
 						// Kein VOIP Produkt
 
@@ -1242,6 +1313,10 @@ class Dimari
 		return true;
 
 	}   // END private function getCOVoicedataByCOID()
+
+
+
+
 
 
 
@@ -1427,6 +1502,10 @@ class Dimari
 
 
 
+
+
+
+
 	// Contracts einlesen die zu den ausgewählten Customer gehören
 	private function getContractsByCustomerID()
 	{
@@ -1517,6 +1596,10 @@ class Dimari
 
 
 
+
+
+
+
 	// Customer einlesen die in der angegebenen GruppenID enthalten sind
 	private function getCustomerByGroupID()
 	{
@@ -1538,7 +1621,8 @@ class Dimari
 				$this->addMessage('Einschränkung: Nur Gruppen_ID', $curGroupID, 'Info');
 
 			}
-		} else
+		}
+		else
 			$add .= " WHERE CUSTOMER_ID > '1' ";
 
 
@@ -1570,7 +1654,8 @@ class Dimari
 			$addFirst = 'FIRST ' . $this->setReadLimitCustomer . ' SKIP 0 ';
 			$this->addMessage('Einschränkung: Limit Kunden', $this->setReadLimitCustomer, 'Info');
 
-		} else
+		}
+		else
 			$addFirst = '';
 
 
@@ -1645,6 +1730,10 @@ class Dimari
 
 
 
+
+
+
+
 	// Dimari Datenbankverbindung herstellen
 	public function createDimariDBConnection()
 	{
@@ -1670,6 +1759,10 @@ class Dimari
 
 
 
+
+
+
+
 	// Ibase num_rows
 	public function ibase_num_rows($result)
 	{
@@ -1684,6 +1777,10 @@ class Dimari
 		return $cnt;
 
 	}   // END private function ibase_num_rows(...)
+
+
+
+
 
 
 
@@ -1725,6 +1822,10 @@ class Dimari
 		ob_flush();
 
 	}   // END private function outNow(...)
+
+
+
+
 
 
 
@@ -1787,6 +1888,10 @@ class Dimari
 		print ('</table></div>');
 
 	}   // END private function showStatus()
+
+
+
+
 
 
 

@@ -1,7 +1,6 @@
 <?php
 
 
-
 /**
  * Created by PhpStorm.
  * User: MMelching
@@ -20,6 +19,10 @@ class DimariExp extends Dimari
 
 
 
+
+
+
+
 	// Klassen - Konstruktor
 	public function __construct($host, $username, $password, $hostRadi, $usernameRadi, $passwordRadi)
 	{
@@ -27,6 +30,10 @@ class DimariExp extends Dimari
 		parent::__construct($host, $username, $password, $hostRadi, $usernameRadi, $passwordRadi);
 
 	}   // END public function __construct(...)
+
+
+
+
 
 
 
@@ -54,6 +61,10 @@ class DimariExp extends Dimari
 		return true;
 
 	}   // END public function initialDimariExport()
+
+
+
+
 
 
 
@@ -107,6 +118,10 @@ class DimariExp extends Dimari
 
 
 
+
+
+
+
 	// Schreibt die Export Datei mit Format Version und Datum
 	public function writeFile($type, $content, $filename = false)
 	{
@@ -135,11 +150,12 @@ class DimariExp extends Dimari
 
 			// Selbstaufruf ... endet wenn freie Versionsnummer gefunden wurde
 			$this->writeFile($type, $content, $filename);
-		} else {
+		}
+		else {
 			// Für die Info-Ausgabe
 			$this->globalLastFilename = $filename;
 
-			if ($this->setNoFileCreation != 'yes'){
+			if ($this->setNoFileCreation != 'yes') {
 				$fp = fopen($fullFilePathAndName, 'w');
 				fwrite($fp, $content);
 				fclose($fp);
@@ -149,6 +165,10 @@ class DimariExp extends Dimari
 		return true;
 
 	}    // END public function writeFile($type, $content, $filename=false)
+
+
+
+
 
 
 
@@ -189,6 +209,10 @@ class DimariExp extends Dimari
 
 		return $excel;
 	}
+
+
+
+
 
 
 
@@ -267,7 +291,7 @@ class DimariExp extends Dimari
 					}
 
 					$this->addExp($customerArray, 'EGN_VERFREMDUNG', $exp, $cntRowEntry);
-					$this->addExp($customerArray, 'TELEFONBUCHEINTRAG', $exp, $cntRowEntry ,'N');
+					$this->addExp($customerArray, 'TELEFONBUCHEINTRAG', $exp, $cntRowEntry, 'N');
 					$this->addExp($customerArray, 'TELEBUCH_NACHNAME', $exp, $cntRowEntry);
 					$this->addExp($customerArray, 'TELEBUCH_VORNAME', $exp, $cntRowEntry);
 					$this->addExp($customerArray, 'TELEBUCH_STRASSE', $exp, $cntRowEntry);    // 60
@@ -293,7 +317,6 @@ class DimariExp extends Dimari
 					$this->addExp($customerArray, 'TELEFONBUCH_UMFANG', $exp, $cntRowEntry);
 
 
-					// $this->addExp($customerArray, 'COS_ID', $exp, $cntRowEntry);
 					$this->addExp($customerArray, 'TV_DIENSTE', $exp, $cntRowEntry);
 					$this->addExp($customerArray, 'ROUTER_MAC_ADR', $exp, $cntRowEntry);
 					$this->addExp($customerArray, 'FTTH_CUS_ID', $exp, $cntRowEntry);
@@ -302,8 +325,8 @@ class DimariExp extends Dimari
 					$this->addExp($customerArray, 'ELVIS_HAUPT_ACCOUNT', $exp, $cntRowEntry);
 					$this->addExp($customerArray, 'CPE_VOIP_ACCOUNT_2', $exp, $cntRowEntry);
 					$this->addExp($customerArray, 'BANDBREITE', $exp, $cntRowEntry);
+					// $this->addExp($customerArray, 'COS_ID', $exp, $cntRowEntry);
 					$this->addExp($customerArray, 'CUST_ID', $exp, $cntRowEntry);
-
 
 
 				}
@@ -331,8 +354,12 @@ class DimariExp extends Dimari
 
 
 
+
+
+
+
 	// Fügt Daten an das Ausgabe Array an
-	private function addExp($customerArray, $fieldname, & $exp, $cntRowEntry, $default='')
+	private function addExp($customerArray, $fieldname, & $exp, $cntRowEntry, $default = '')
 	{
 
 		if (isset($customerArray[$fieldname]))
@@ -343,6 +370,10 @@ class DimariExp extends Dimari
 		return true;
 
 	} // END private function addExp()
+
+
+
+
 
 
 
@@ -406,7 +437,7 @@ class DimariExp extends Dimari
 				// DATEN EBENE CONTRACT
 
 				// Setze CUST_ID ... CONTRACT_ID
-				// $curDataSet['CUSTOMER_ID'][$curCustomerID]['CUST_ID'] = $contractArray['CONTRACT_ID'];
+				$curDataSet['CUSTOMER_ID'][$curCustomerID]['CUST_ID'] = $contractArray['CONTRACT_ID'];
 
 
 				// Setze GUELTIG_VON
@@ -519,7 +550,8 @@ class DimariExp extends Dimari
 												$curDataSet['CUSTOMER_ID'][$curCustomerID]['VOIP_PORT_TERMIN'] = $subsIDArray['VOIP_PORT_TERMIN'];
 											else
 												$curDataSet['CUSTOMER_ID'][$curCustomerID]['VOIP_PORT_TERMIN'] = '';
-										} else {
+										}
+										else {
 											if ((strlen($curDataSet['CUSTOMER_ID'][$curCustomerID]['VOIP_PORT_TERMIN']) < 1) && (isset($subsIDArray['VOIP_PORT_TERMIN'])))
 												$curDataSet['CUSTOMER_ID'][$curCustomerID]['VOIP_PORT_TERMIN'] = $subsIDArray['VOIP_PORT_TERMIN'];
 										}
@@ -534,7 +566,8 @@ class DimariExp extends Dimari
 											else
 												$curDataSet['CUSTOMER_ID'][$curCustomerID]['VOIP_PORT_ABG_CARRIER'] = '';
 
-										} else {
+										}
+										else {
 											if ((strlen($curDataSet['CUSTOMER_ID'][$curCustomerID]['VOIP_PORT_ABG_CARRIER']) < 1) && (isset($subsIDArray['CARRIER_CODE'])))
 												$curDataSet['CUSTOMER_ID'][$curCustomerID]['VOIP_PORT_ABG_CARRIER'] = $subsIDArray['CARRIER_CODE'];
 										}
@@ -590,7 +623,8 @@ class DimariExp extends Dimari
 												$this->addDataToDataSetBySubsIDArray($curDataSet, $curCustomerID, $subsIDArray, 'TELEBUCH_EINTRAG_ELEKT');
 
 											}
-										} else {
+										}
+										else {
 											if (!isset($curDataSet['CUSTOMER_ID'][$curCustomerID]['TELEFONBUCHEINTRAG']))
 												$curDataSet['CUSTOMER_ID'][$curCustomerID]['TELEFONBUCHEINTRAG'] = 'N';
 										}
@@ -628,7 +662,8 @@ class DimariExp extends Dimari
 				// GUELTIG_VON eventuell gesetzt?
 				if ((isset($curDataSet['CUSTOMER_ID'][$curCustomerID]['GUELTIG_VON'])) && (strlen($curDataSet['CUSTOMER_ID'][$curCustomerID]['GUELTIG_VON']) > 0)) {
 					$curDataSet['CUSTOMER_ID'][$curCustomerID]['INSTALLATIONSTERMIN'] = $curDataSet['CUSTOMER_ID'][$curCustomerID]['GUELTIG_VON'];
-				} else {
+				}
+				else {
 					if (isset($curDataSet['CUSTOMER_ID'][$curCustomerID]['VOIP_PORT_TERMIN']))
 						$curDataSet['CUSTOMER_ID'][$curCustomerID]['INSTALLATIONSTERMIN'] = $curDataSet['CUSTOMER_ID'][$curCustomerID]['VOIP_PORT_TERMIN'];
 					else
@@ -657,6 +692,10 @@ class DimariExp extends Dimari
 		return true;
 
 	}   // END  private function mainToExcel()
+
+
+
+
 
 
 
@@ -730,6 +769,10 @@ class DimariExp extends Dimari
 
 
 
+
+
+
+
 	// Setze einige VDSL Werte
 	private function preExcelVDSL(& $curDataSet, $curCustomerID, $curProductID, $productArray)
 	{
@@ -749,7 +792,8 @@ class DimariExp extends Dimari
 
 			// Energiekunde! ... Trage das unter Optionen ein
 			$curDataSet['CUSTOMER_ID'][$curCustomerID]['OPTION_1'] = '21';
-		} elseif ($curProductID == '10070')
+		}
+		elseif ($curProductID == '10070')
 			$curName = 'VDSL4me';
 		else
 			$curName = $productArray['PRODUCT_Name'];
@@ -769,6 +813,10 @@ class DimariExp extends Dimari
 		return true;
 
 	}   // END private function preExcelVDSL(...)
+
+
+
+
 
 
 
