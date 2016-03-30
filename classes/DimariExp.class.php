@@ -629,6 +629,12 @@ class DimariExp extends Dimari
 												$curDataSet['CUSTOMER_ID'][$curCustomerID]['TELEFONBUCHEINTRAG'] = 'N';
 										}
 
+										// Wenn kein TELEFONBUCH_NACHNAME ... dann TELEFONBUCHEINTRAG = N
+										//$curDataSet['CUSTOMER_ID'][$curCustomerID][$fiedlname] = $subsIDArray[$fiedlname];
+										if ( (!isset($curDataSet['CUSTOMER_ID'][$curCustomerID]['TELEBUCH_NACHNAME'])) || (strlen($curDataSet['CUSTOMER_ID'][$curCustomerID]['TELEBUCH_NACHNAME']) < 1) ) {
+											$curDataSet['CUSTOMER_ID'][$curCustomerID]['TELEFONBUCHEINTRAG'] = 'N';
+										}
+
 
 									}
 								}   // END // Durchlauf SUBS_ID
