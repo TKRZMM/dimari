@@ -74,6 +74,8 @@ class Dimari
 	// !!! Muss ausserhalb der Klasse gesetzt werden
 	public $setExportType;
 
+	public $globalErrorRadius = array();
+
 
 	// Datenbank Variable ... werden durch den Construktor gesetzt
 	private $myHost;
@@ -258,6 +260,11 @@ class Dimari
 //		print_r($this->globalData);
 //		echo "</pre><br>";
 
+
+		// IDEBUG pre - tag
+		echo "<pre><hr>";
+		print_r($this->globalErrorRadius);
+		echo "<hr></pre><br>";
 
 		$this->outNow('Ende', '', 'Info');
 
@@ -617,7 +624,7 @@ class Dimari
 				// DATEN EBENE
 
 				// Radius Username vorhanden? ... Dann Daten aus Radius lesen
-				if ((isset($customerArray['RADIUS_PRE_USERNAME'])) && (strlen($customerArray['RADIUS_PRE_USERNAME']) > 0)) {
+//				if ((isset($customerArray['RADIUS_PRE_USERNAME'])) && (strlen($customerArray['RADIUS_PRE_USERNAME']) > 0)) {
 
 					$query = "SELECT	ui.id		AS UserInfoID,
  										ui.username AS UserInfoUsername,
@@ -626,7 +633,7 @@ class Dimari
  										rc.value	AS RadcheckValue
  								  FROM userinfo ui
  								   LEFT JOIN radcheck rc ON rc.id = ui.id
- 								   WHERE ui.lastname = '" . $curCustomerID . "' LIMIT 1";
+ 								   WHERE ui.lastname LIKE '%" . $curCustomerID . "%' LIMIT 1";
 
 					$result = $DBObject->query($query);
 
@@ -652,20 +659,23 @@ class Dimari
 						$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['DATEN_USERNAME'] = '';
 						$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['DATEN_USERPASSWORT'] = '';
 						$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['USERINFO_ID'] = '-1';
+
+						// Speichere die fehlenden Kundennummern!
+						$this->globalErrorRadius['CustomerID'][] = $curCustomerID;
 					}
 
 					mysqli_free_result($result);
 
-				}
-				else {
-					$cntNoRadData++;
-
-					// echo $cntNoRadData . " Habe user nicht im Radiusserver gefunden: KDNr. " . $curCustomerID . " Authname " . $customerArray['RADIUS_PRE_USERNAME']."<br>";
-					// Setze Flag auf ... noch nicht angelegt
-					$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['DATEN_USERNAME'] = '';
-					$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['DATEN_USERPASSWORT'] = '';
-					$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['USERINFO_ID'] = '-1';
-				}
+//				}
+//				else {
+//					$cntNoRadData++;
+//
+//					// echo $cntNoRadData . " Habe user nicht im Radiusserver gefunden: KDNr. " . $curCustomerID . " Authname " . $customerArray['RADIUS_PRE_USERNAME']."<br>";
+//					// Setze Flag auf ... noch nicht angelegt
+//					$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['DATEN_USERNAME'] = '';
+//					$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['DATEN_USERPASSWORT'] = '';
+//					$this->globalData[$curCustomerID]['CUSTOMER_ID'][$curCustomerID]['USERINFO_ID'] = '-1';
+//				}
 
 
 			}   // END   // Durchlauf CustomerID
@@ -676,6 +686,12 @@ class Dimari
 		return true;
 
 	}   // END private function getDataFromRadiusServer()
+
+
+
+
+
+
 
 
 
