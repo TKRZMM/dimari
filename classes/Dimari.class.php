@@ -441,10 +441,10 @@ class Dimari
 						// Erste 5 = Vowahl
 						// Rest = Kopfnummer
 
-						$curVOIP_NATIONAL_VORWAHL_1 = substr($tmpFullNumber, 0, 4);
+						$curVOIP_NATIONAL_VORWAHL_1 = substr($tmpFullNumber, 0, 5);
 						$tmp = $curVOIP_NATIONAL_VORWAHL_1;
-						$curVOIP_NATIONAL_VORWAHL_1 = '0' . $tmp;
-						$curVOIP_KOPFNUMMER_1 = substr($tmpFullNumber, 4);
+						$curVOIP_NATIONAL_VORWAHL_1 = $tmp;
+						$curVOIP_KOPFNUMMER_1 = substr($tmpFullNumber, 5);
 
 						// echo "$curCustomerID ... $tmpFullNumber => $curVOIP_NATIONAL_VORWAHL_1 => $curVOIP_KOPFNUMMER_1<br>";
 
