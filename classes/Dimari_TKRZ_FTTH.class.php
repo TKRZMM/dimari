@@ -7,7 +7,7 @@
  * Date: 15.03.2016
  * Time: 08:33
  */
-class Dimari
+class Dimari_TKRZ_FTTH
 {
 
 	// Initial Variable:
@@ -48,6 +48,21 @@ class Dimari
 										'FTTH' => array()
 	);
 
+	// Nummern die für Produkte und Telefonie sind
+	// Tabelle ACCOUNTS
+	// Feld: ACCOUNTNO
+	public $setAccountIDForVOIP = array('FTTC' => array(),
+										'FTTH' => array('85200')
+	);
+
+
+	// Product_ID aus Dimari => Produkt_ID aus Konzeptum => Name aus Konzeptum
+	public $setVoipDienstNames = array('FTTH' => array('10034'=>array('833'=>'DOCSIS FON'),
+													   '10035'=>array('833'=>'DOCSIS FON'),
+													   '10064'=>array('833'=>'DOCSIS FON'))
+	);
+
+
 	// Ext Produkt ID der Dienste
 	public $setExtProdServiceID = array('setProductIDForVOIP'     => '771',
 										'setProductIDForInternet' => '770'
@@ -62,6 +77,10 @@ class Dimari
 	public $myMessage = array('Info'    => array(),
 							  'Runtime' => array()
 	);
+
+
+	public $setDocsisByProductID = array('FTTH' => array('10034', '10035', '10064'));
+	public $setGenexisByProductID = array('FTTH' => array('10042', '10043'));
 
 
 	// Globaler HAUPT - Handler für Datenverarbeitung
@@ -81,9 +100,7 @@ class Dimari
 	private $myHost;
 	private $myUsername;
 	private $myPassword;
-	private $hostRadi;
-	private $usernameRadi;
-	private $passwordRadi;
+
 
 	// Datenbank Object
 	private $dbF;
@@ -108,13 +125,14 @@ class Dimari
 	// Wenn ja... wird keine Ausgabe - Datei erzeugt
 	public $setNoFileCreation = 'no';
 
-	// PurTel Kunde
-	//private $onlyExampleCustomerID = '20010686';
-
-	// Tester
-	//private $onlyExampleCustomerID = '20010897';
 
 
+
+
+	// private $onlyExampleCustomerID = '20010858'; 			// Falsche Kundengruppe (ist in FTTC) ... Genexis also nicht Docsis - Kunde
+	// private $onlyExampleCustomerID = '20010007'; 			// Cisco also Docsis - Kunde
+	//private $onlyExampleCustomerID = '20010034'; 			// Cisco also Docsis - Kunde
+	private $onlyExampleCustomerID = '20010272'; 			// Genexis - Kunde
 
 	//private $onlyExampleCustomerID = '20010120';        // Matthias Brumm(!) ... Chaos
 
@@ -130,38 +148,14 @@ class Dimari
 
 
 	// Klassen - Konstruktor
-	public function __construct($host, $username, $password, $hostRadi, $usernameRadi, $passwordRadi)
+	public function __construct($host, $username, $password)
 	{
 
 		$this->myHost = $host;
 		$this->myUsername = $username;
 		$this->myPassword = $password;
 
-		$this->hostRadi = $hostRadi;
-		$this->usernameRadi = $usernameRadi;
-		$this->passwordRadi = $passwordRadi;
-
 	}   // END public function __construct(...)
-
-
-
-
-
-
-
-
-
-
-	// Default Name - Methode
-	public function myName($out = false)
-	{
-
-		if ($out)
-			print (__CLASS__);
-
-		return __CLASS__;
-	}
-	// END public function myName(...)
 
 
 
@@ -171,7 +165,7 @@ class Dimari
 	 * In dieser Methode steuere ich den weiteren Programmalauf
 	 * Alle weiteren Methoden werden hier gestartet
 	 */
-	public function initialGetFTTCServices()
+	public function initialGetFTTHServices()
 	{
 
 		$this->outNow('Start', '', 'Info');
@@ -183,17 +177,16 @@ class Dimari
 			return false;
 		}
 
-		$this->outNow('Gewählter Daten-Typ:', 'FTTC', 'Info');
+		$this->outNow('Gewähltes System:', 'TKRZ', 'Info');
+		$this->outNow('Gewählter Daten-Typ:', 'FTTH', 'Info');
 
 
 		flush();
 		ob_flush();
 
-
-
-
 		// Dimari DB Verbindung herstellen
 		$this->flushByFunctionCall('createDimariDBConnection');
+
 
 		// Customer einlesen die in der angegebenen GruppenID enthalten sind
 		$this->flushByFunctionCall('getCustomerByGroupID');
@@ -219,36 +212,40 @@ class Dimari
 		$this->flushByFunctionCall('getSubscriberByCOVID');
 
 
-
 		// Telefonbucheinträge ermitteln
 		$this->flushByFunctionCall('getPhoneBookEntrysByCustomerID');
+
 
 
 		// Daten erste Aufbereitung
 		$this->flushByFunctionCall('initialDimariExport');
 
+//		echo "<pre>";
+//		print_r($this->globalData);
+//		echo "</pre><br>";
 
 
 		// Customer Vorname - Nachname einlesen
-		$this->flushByFunctionCall('getNamesFromCustomer');
+		// $this->flushByFunctionCall('getNamesFromCustomer');
 
 
 		// Daten aus Radius Server holen
-		$this->flushByFunctionCall('getDataFromRadiusServer');
+		//$this->flushByFunctionCall('getDataFromRadiusServer');
 
 
 		// Telefon-Daten aus Excelliste holen
-		$this->flushByFunctionCall('getDataFromExcelPhone');
+		//$this->flushByFunctionCall('getDataFromExcelPhone');
 
 
 		// Transaction-Daten aus Excelliste holen
-		$this->flushByFunctionCall('getDataFromExcelTransaction');
+		// $this->flushByFunctionCall('getDataFromExcelTransaction');
 
 
 
 		// Letze Vorbereitung der Daten
 		$this->flushByFunctionCall('preWriteToFiel');
 
+		/*
 
 		// Schreibe Daten in Excel-Datei
 		$this->flushByFunctionCall('writeToExcel');
@@ -260,14 +257,9 @@ class Dimari
 //		print_r($this->globalData);
 //		echo "</pre><br>";
 
-
-		// IDEBUG pre - tag
-		echo "<pre><hr>";
-		print_r($this->globalErrorRadius);
-		echo "<hr></pre><br>";
+		*/
 
 		$this->outNow('Ende', '', 'Info');
-
 		return true;
 
 	} // END public function initialGetFTTCServices()
@@ -845,7 +837,6 @@ class Dimari
 
 				// DATEN EBENE
 
-
 				// Haben wir grün aus Co_Voicedata?
 				$boolA = false;
 				if ((isset($curContractArray['PhoneBookFlagFromCO_VOICEDATA'])) && ($curContractArray['PhoneBookFlagFromCO_VOICEDATA'] == 'yes'))
@@ -858,7 +849,6 @@ class Dimari
 					$boolB = true;
 
 				if ($boolA && $boolB) {
-
 
 					// Durchlauf Produkte
 					foreach($curContractArray['PRODUCT_ID'] as $curProductID => $curProductArray) {
@@ -924,8 +914,8 @@ class Dimari
 		$cntExpCustomer = count($this->globalData['CUSTOMER_ID_Array']);
 
 
-		$this->addMessage('&sum; Ermittelt TelB. Einträge ', $cntSumPhoneBookEntry, 'Info');
-		$this->addMessage('&sum; Ermittelt TelB. Einträge ', $cntSumPhoneBookEntry, 'Sum');
+		$this->addMessage('&sum; Ermittelt TelB. Einträge ', ''.$cntSumPhoneBookEntry.'', 'Info');
+		$this->addMessage('&sum; Ermittelt TelB. Einträge ', ''.$cntSumPhoneBookEntry.'', 'Sum');
 
 
 		$this->addMessage('&sum; Exportfähige Kunden ', $cntExpCustomer, 'Sum');
@@ -996,18 +986,22 @@ class Dimari
 		// Durchlauf Customer_ID
 		foreach($this->globalData['CUSTOMER_ID_Array'] as $curCustomerID => $curCustomerArray) {
 
-
 			// Durchlauf Vertrag
 			foreach($curCustomerArray['CONTRACT_ID'] as $curContractID => $curContractArray) {
 
 				// DATEN EBENE!!!
 				//TODO ... hmmm sollte ich hier abfangen wenn garkeine PRODCT_ID vorhanden ist?
 
+
+
 				// Durchlauf Produkte
 				foreach($curContractArray['PRODUCT_ID'] as $curProductID => $curProductArray) {
 
+					$curAccountNo = $curProductArray['ACCOUNTNO'];
+
 					// Prüfen ob VOIP Daten für das Produkt vorhanden sein sollten
-					if (in_array($curProductID, $this->setProductIDForVOIP[$this->setExportType])) {
+					// if (in_array($curAccountNo, $this->setAccountIDForVOIP[$this->setExportType])) {
+					if ( (in_array($curAccountNo, $this->setAccountIDForVOIP[$this->setExportType])) || ($curProductID == '10043') ) {
 
 						// Ja ist ein VOIP Produkt
 						if (isset($curProductArray['COV_ID'])) {
@@ -1221,7 +1215,6 @@ class Dimari
 		$cntInternetData = 0;
 		$cntNoVOIPData = 0;
 
-
 		// Durchlauf Customer_ID
 		foreach($this->globalData['CUSTOMER_ID_Array'] as $curCustomerID => $curCustomerArray) {
 
@@ -1235,12 +1228,16 @@ class Dimari
 				// Durchlauf Produkte
 				foreach($curContractArray['PRODUCT_ID'] as $curProductID => $curProductArray) {
 
-					// Prüfen ob VOIP Daten für das Produkt vorhanden sein sollten
-					if (in_array($curProductID, $this->setProductIDForVOIP[$this->setExportType])) {
+					$curAccountNo = $curProductArray['ACCOUNTNO'];
 
+					// Prüfen ob VOIP Daten für das Produkt vorhanden sein sollten
+					//if (in_array($curAccountNo, $this->setAccountIDForVOIP[$this->setExportType])) {
+					if ( (in_array($curAccountNo, $this->setAccountIDForVOIP[$this->setExportType])) || ($curProductID == '10043') ) {
 						// Ja ist ein VOIP Produkt
 
-						$query = "SELECT * FROM CO_VOICEDATA WHERE CO_ID = '" . $curContractID . "' AND STATUS_ID > '0' ORDER BY COV_ID";
+						// Blub Bin mir nicht sicher ob Status_ID grösser 0 sein muss... bei FTTC war dem so!
+						// $query = "SELECT * FROM CO_VOICEDATA WHERE CO_ID = '" . $curContractID . "' AND STATUS_ID > '0' ORDER BY COV_ID";
+						$query = "SELECT * FROM CO_VOICEDATA WHERE CO_ID = '" . $curContractID . "' AND STATUS_ID >= '0' ORDER BY COV_ID";
 						$result = ibase_query($this->dbF, $query);
 
 						$cntCOV_Data = 0;
@@ -1300,7 +1297,6 @@ class Dimari
 					else {
 
 						// Kein VOIP Produkt
-
 						$cntInternetData++;
 					}
 
@@ -1316,11 +1312,11 @@ class Dimari
 
 
 		$this->addMessage('&sum; Ermittelt VOIP ', $cntVOIPData, 'Info');
-		$this->addMessage('&sum; Ermittelt VDSL ', $cntInternetData, 'Info');
+		$this->addMessage('&sum; Ermittelt sonstige Dienste ', $cntInternetData, 'Info');
 
 
 		$this->addMessage('&sum; Ermittelt VOIP ', $cntVOIPData, 'Sum');
-		$this->addMessage('&sum; Ermittelt VDSL ', $cntInternetData, 'Sum');
+		$this->addMessage('&sum; Ermittelt sonstige Dienste ', $cntInternetData, 'Sum');
 		$this->addMessage('&sum; Exportfähige Kunden ', $cntExpCustomer, 'Sum');
 
 		if ($cntNoVOIPData > 0)
@@ -1342,7 +1338,6 @@ class Dimari
 	// Products einlesen die zu den Contracts gehören
 	private function getProductsByContractID()
 	{
-
 
 		// Einschränkung bei Internet?
 		$addInternet = '';
@@ -1450,7 +1445,6 @@ class Dimari
                             " . $add . "
                             ORDER BY cop.CO_PRODUCT_ID";
 
-
 				$result = ibase_query($this->dbF, $query);
 
 				$boolGotProductID = false;
@@ -1466,11 +1460,15 @@ class Dimari
 					$this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$curContractID]['PRODUCT_ID'][$row->PRODUCT_ID]['PRODUCT_ID'] = $row->PRODUCT_ID;
 					$this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$curContractID]['PRODUCT_ID'][$row->PRODUCT_ID]['PRODUCT_Name'] = $row->DESCRIPTION;
 
+
 					$this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$curContractID]['PRODUCT_ID'][$row->PRODUCT_ID]['COPDATE_ACTIVE'] = $row->COPDATE_ACTIVE;
 					$this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$curContractID]['PRODUCT_ID'][$row->PRODUCT_ID]['DATE_DEACTIVE'] = $row->COPDATE_DEACTIVE;
 
 
 					$this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$curContractID]['PRODUCT_ID'][$row->PRODUCT_ID]['COS_ID'] = $row->COS_ID;
+					$this->globalData['CUSTOMER_ID_Array'][$curCustomerID]['CONTRACT_ID'][$curContractID]['PRODUCT_ID'][$row->PRODUCT_ID]['ACCOUNTNO'] = $row->ACCOUNTNO;
+
+
 
 					$boolGotData = true;
 
@@ -1488,11 +1486,11 @@ class Dimari
 			}
 
 
-			// Falsch zugewiesener Kunde... ist FTTH statt wie gewollt FTTC
+			// Falsch zugewiesener Kunde... ist FTTC statt wie gewollt FTTH
 			if (!$boolGotData) {
 				$cntFailFTTHIsFTTC++;
 				if ((isset($this->setFTTHtoFTTCWrongCustomerOnScreen)) && ($this->setFTTHtoFTTCWrongCustomerOnScreen == 'yes'))
-					$this->addMessage('FTTH auf FTTC eingestellt KdNr.', $curCustomerID, 'Alert');
+					$this->addMessage('FTTC auf FTTH eingestellt KdNr.', $curCustomerID, 'Alert');
 			}
 
 		}
@@ -1500,7 +1498,7 @@ class Dimari
 
 		// Alert Message bei falsch zugewiesene Kunden (FFH ist auf FTTC)
 		if ($cntFailFTTHIsFTTC > 0)
-			$this->addMessage('FTTH auf FTTC eingestellt x mal', $cntFailFTTHIsFTTC, 'Alert');
+			$this->addMessage('FTTC auf FTTH eingestellt x mal', $cntFailFTTHIsFTTC, 'Alert');
 
 
 		$cntExpCustomer = count($this->globalData['CUSTOMER_ID_Array']);
@@ -1599,7 +1597,7 @@ class Dimari
 		$this->addMessage('&sum; Ermittelte Verträge', $cntContracts, 'Sum');
 		$this->addMessage('&sum; Exportfähige Kunden', $cntCustomerToExport, 'Sum');
 
-		// Summenausgabebei Alert
+		// Summenausgabe bei Alert
 		if ($cntCustomerHasNoContract > 0)
 			$this->addMessage('Kein Vertag für Kunde x mal', $cntCustomerHasNoContract, 'Alert');
 
@@ -1628,15 +1626,16 @@ class Dimari
 			foreach($this->setCustomerByGroupID[$this->setExportType] as $curGroupID) {
 
 				if (!$bool)
-					$add .= " WHERE GROUP_ID = '" . $curGroupID . "' ";
+					$add .= " WHERE (GROUP_ID = '" . $curGroupID . "'";
 				else
-					$add .= " OR GROUP_ID = '" . $curGroupID . "' ";
+					$add .= " OR GROUP_ID = '" . $curGroupID . "'";
 
 				$bool = true;
 
 				$this->addMessage('Einschränkung: Nur Gruppen_ID', $curGroupID, 'Info');
 
 			}
+			$add .= ') ';
 		}
 		else
 			$add .= " WHERE CUSTOMER_ID > '1' ";
@@ -1645,11 +1644,19 @@ class Dimari
 
 		// Nur Customer einlesen die NICHT Status x haben?
 		if ((isset($this->setNoCustomerInStatusID[$this->setExportType])) && (count($this->setNoCustomerInStatusID[$this->setExportType]) > 0)) {
+			$bool = false;
 			foreach($this->setNoCustomerInStatusID[$this->setExportType] as $curStatusID) {
-				$add .= " AND STATUS_ID != '" . $curStatusID . "' ";
+
+				if (!$bool)
+					$add .= " AND (STATUS_ID != '" . $curStatusID . "'";
+				else
+					$add .= " AND STATUS_ID != '" . $curStatusID . "'";
+
+				$bool = true;
 
 				$this->addMessage('Einschränkung: Nicht Status_ID', $curStatusID, 'Info');
 			}
+			$add .= ')';
 		}
 
 
@@ -1854,7 +1861,7 @@ class Dimari
 
 		$cntCategorie = 0;
 
-		print ('<div style="position: fixed; overflow: auto; top: 5px; bottom: 20px; min-width: 600px; right: 5px; background-color: beige"><table>');
+		print ('<div style="position: fixed; overflow: auto; top: 50px; bottom: 20px; min-width: 600px; right: 5px; background-color: beige"><table>');
 
 		// Durchlauf der Message - Kategorien
 		foreach($this->myMessage as $messageType => $curMessageArray) {
