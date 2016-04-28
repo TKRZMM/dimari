@@ -21,6 +21,32 @@ include 'includes/head.php';
 include 'includes/config.inc.php';
 
 
+// Anhang Klasse laden ... Aus dem Konzeptum - Schnittstellen - Dokument
+include 'classes/Anhang.class.php';
+
+// Message Klasse laden ... für Bildschirmausgabe
+include 'classes/Message.class.php';
+
+// Klasse zum Einlesen/Daten ermitteln laden
+include 'classes/CollectData.class.php';
+
+// Klasse zum Ausgeben der Daten laden
+include 'classes/OutData.class.php';
+
+
+$obj = new OutData();
+echo "Hallo<bR>asdlfjasdf";
+$obj->addMessage('hallo', 'Test', 'Blub');
+
+
+
+$obj->initialOutDataFullHandling();
+/*
+
+
+
+
+
 // TKRZ
 if ($mandant == 'TKRZ') {
 
@@ -82,7 +108,7 @@ elseif ($mandant == 'Schuettorf') {
 
 }    // END RheiNet
 
-
+*/
 
 // Debug ausgeben:
 
