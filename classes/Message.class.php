@@ -11,6 +11,7 @@ abstract class Message
 
 	// Message Handler
 	public $myMessage = array('Info'    => array(),
+							  'Filter'  => array(),
 							  'Runtime' => array()
 	);
 
@@ -64,7 +65,7 @@ abstract class Message
 
 		$cntCategorie = 0;
 
-		print ('<div style="position: static; overflow: auto; top: 50px; bottom: 20px; min-width: 600px; right: 5px; background-color: beige"><table>');
+		print ('<div style="position: fixed; overflow: auto; top: 50px; bottom: 20px; min-width: 600px; right: 5px; background-color: beige"><table>');
 
 		// Durchlauf der Message - Kategorien
 		foreach($this->myMessage as $messageType => $curMessageArray) {
@@ -82,17 +83,17 @@ abstract class Message
 
 
 				// SpaltenTyp ausgeben:
-				print ('<tr><td style="min-width: 40px;" class="bottomLine">Cnt</td><td style="min-width: 260px;" class="bottomLine">Event</td><td class="bottomLine">Status</td></tr>');
+				print ('<tr><td style="min-width: 40px;" class="bottomLine">Cnt</td><td style="min-width: 460px;" class="bottomLine">Event</td><td class="bottomLine">Status</td></tr>');
 
 				foreach($curMessageArray['messageValue'] as $fieldIndex => $value) {
 
-					print ('<tr><td class="bottomLine">');
+					print ('<tr><td class="bottomLine" valign="top">');
 
 					$infoCnt = '# ' . ($fieldIndex + 1);
 					print ($infoCnt);
 
 
-					print ('</td><td class="bottomLine">');
+					print ('</td><td class="bottomLine" valign="top">');
 					print ($value);
 					print ('</td>');
 

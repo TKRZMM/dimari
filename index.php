@@ -7,8 +7,7 @@
  */
 
 
-$mandant = 'TKRZ';    // TKRZ / RheiNet / Schuettorf
-$type = 'FTTH';
+
 
 
 ////////////////////////////// Ab hier keine Edit nötig //////////////////////////////////////////
@@ -20,6 +19,8 @@ include 'includes/head.php';
 // Settings laden
 include 'includes/config.inc.php';
 
+// Customer Klasse ladne
+include 'classes/Customer.class.php';
 
 // Anhang Klasse laden ... Aus dem Konzeptum - Schnittstellen - Dokument
 include 'classes/Anhang.class.php';
@@ -34,9 +35,7 @@ include 'classes/CollectData.class.php';
 include 'classes/OutData.class.php';
 
 
-$obj = new OutData();
-echo "Hallo<bR>asdlfjasdf";
-$obj->addMessage('hallo', 'Test', 'Blub');
+$obj = new OutData($host, $username, $password);
 
 
 

@@ -10,10 +10,19 @@ class OutData extends CollectData
 {
 
 	// Klassen - Konstruktor
-	public function __construct()
+	public function __construct($host, $username, $password)
 	{
 
+		parent::__construct($host, $username, $password);
+
 	}   // END public function __construct(...)
+
+
+
+
+
+
+
 
 
 
@@ -22,10 +31,11 @@ class OutData extends CollectData
 	{
 
 		// Starte Daten einlesen:
-		$this->initialCollectData();
+		if (!$this->initialCollectData())
+			exit;
 		$this->showStatus();
 
-	}	// END function initialOutDataFullHandling()
+	}    // END function initialOutDataFullHandling()
 
 
 }   // END class OutData
