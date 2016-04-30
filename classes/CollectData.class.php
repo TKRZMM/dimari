@@ -31,12 +31,13 @@ abstract class CollectData extends Message
 
 
 	// Nur Customer einlesen der Kundennummer x besitzt?
-	public $setOnlyExampleCustomerID = '';    // 20010004
+	public $setOnlyExampleCustomerID = '20010028';    // 20010004
+	// 20010028 ... Kunde mit Telefonbucheintrag
 
 
 	// Wie viele Customer sollen eingelesen werden?
 	// 0 für keine Einschränkung beim Limit
-	public $setReadLimitCustomer = '2';
+	public $setReadLimitCustomer = '1111110';
 
 
 	// Customer einlesen die in der Customer Gruppe ... sind
@@ -220,11 +221,31 @@ abstract class CollectData extends Message
 
 
 
-
-
-
-
 		// VOIP - Telefonnummern einlesen
+		$this->outNow('VOIP - Telefonnummern einlesen', 'START ...', 'Runtime');
+		if ($this->getSubscriberByCOVID())
+			$this->outNow('VOIP - Telefonnummern einlesen', '... DONE', 'Runtime');
+		else {
+			$this->outNow('VOIP - Telefonnummern einlesen', '... FAIL', 'Runtime');
+
+			return false;
+		}
+
+
+
+		// Telefonbucheinträge ermitteln
+		$this->outNow('Telefonbucheinträge ermitteln', 'START ...', 'Runtime');
+		if ($this->getPhoneBookEntrysByCustomerID())
+			$this->outNow('Telefonbucheinträge ermitteln', '... DONE', 'Runtime');
+		else {
+			$this->outNow('Telefonbucheinträge ermitteln', '... FAIL', 'Runtime');
+
+			return false;
+		}
+
+
+
+
 
 
 
@@ -250,11 +271,188 @@ abstract class CollectData extends Message
 
 
 
-	// VOIP - Telefonnummern einlesen
+	// Telefonbucheinträge ermitteln -> Build Telefonbucheintrag in custSubIDSet
+	private function getPhoneBookEntrysByCustomerID()
+	{
+
+		// Counter Var
+		$cntSumPhoneBookEntry = '0';
+
+		// Duchlauf Customer - Handler
+		foreach($this->custArray as $customerIDFromObject => $curCustObj) {
+
+			// Aktuelle KundenNummer
+			$curCustomerID = $curCustObj->custExpSet['KUNDEN_NR'];
+
+			// Durchlauf VOIP-Daten des Kunden
+			foreach($curCustObj->custVOIPSet as $curCOV_ID => $curVOIPArray) {
+
+				// Wenn Tel-Eintrag == J ... foreach custSubIDSet
+				// Soll laut VOIP-Daten ein Telefonbucheintrag gesetzt werden?
+
+				if ($curVOIPArray['TELEFONBUCHEINTRAG'] == 'J')
+					echo "hier $curCustomerID<br>";
+
+				if ( ($curVOIPArray['TELEFONBUCHEINTRAG'] == 'J') && (isset($curCustObj->custVOIPSet[$curCOV_ID]['TELEFONBUCH_UMFANG'])) ){	// LIVE
+					// if ($curVOIPArray['TELEFONBUCHEINTRAG'] == 'N') {    // DEVELOP
+					// Lauf VOIP J ... jetzt prüfen ob das bei den Sub-IDs (Telefonnummern auch der Fall ist:
+
+					if (isset($curCustObj->custSubIDPSet)) {
+
+						// Durchlauf Subscriber SubID (Telefonnumern)
+						foreach($curCustObj->custSubIDPSet as $curSub_ID => $curSubArray) {
+
+							// Wenn bei SubID auch der Telefonbucheintrag gesetzt werden soll... dann haben wir bei beiden Settings ja!
+							if ($curSubArray['TELEFONBUCHEINTRAG'] == 'J'){	//  LIVE
+								// if ($curSubArray['TELEFONBUCHEINTRAG'] == 'N') {    // DEVELOP
+								// Ja, Diese Telefonnummer soll einen Telefonbucheintrag erhalten
+
+								$phoneBookEntryType = $curCustObj->custVOIPSet[$curCOV_ID]['TELEFONBUCH_UMFANG'];	// LIVE
+								// $phoneBookEntryType = 'V';    // DEVELOP
+
+								$retArray = $this->getAddressPhoneBoockByCustomerIDAndTypeID($curCustomerID, $phoneBookEntryType);
+
+								if (count($retArray) > 0) {
+
+									$cntSumPhoneBookEntry++;
+
+									$curCustObj->custSubIDPSet[$curSub_ID]['TELEBUCH_TEL'] = $curCustObj->custSubIDPSet[$curSub_ID]['VOIP_NATIONAL_VORWAHL_1'] . '/' . $curCustObj->custSubIDPSet[$curSub_ID]['VOIP_KOPFNUMMER_1'];
+
+									foreach($retArray as $keyName => $value) {
+										$curCustObj->custSubIDPSet[$curSub_ID][$keyName] = $value;
+									}
+
+								}
+							}
+							else {
+								// Nein, Diese Telefonnummer soll keinen Telefonbucheintrag erhalten
+								$curCustObj->custSubIDPSet[$curSub_ID]['TELEFONBUCHEINTRAG'] = 'N';
+							}
+
+						}    // END // Durchlauf Subscriber SubID (Telefonnumern)
+
+					}
+					else
+						$curVOIPArray['TELEFONBUCHEINTRAG'] = 'N';
+				}
+
+			}    // END // Durchlauf VOIP-Daten des Kunden
+
+		}    // END // Duchlauf Customer - Handler
+
+		$this->addMessage('&sum; Ermittelt Telefonbuch-Einträge ', ''.$cntSumPhoneBookEntry.'', 'Info');
+		$this->addMessage('&sum; Ermittelt Telefonbuch-Einträge ', ''.$cntSumPhoneBookEntry.'', 'Sum');
+
+		return true;
+
+	}    // END private function getPhoneBookEntrysByCustomerID()
+
+
+
+
+
+
+
+
+
+
+	// VOIP - Telefonnummern einlesen -> Build custSubIDSet (Telefonnumer)
 	private function getSubscriberByCOVID()
 	{
 
+		// Counter Vars
+		$cntSubIDData = '0';
 
+
+		// Duchlauf Customer - Handler
+		foreach($this->custArray as $customerIDFromObject => $curCustObj) {
+
+			// Aktuelle KundenNummer
+			$curCustomerID = $curCustObj->custExpSet['KUNDEN_NR'];
+
+
+			// Durchlauf VOIP-Daten des Kunden
+			foreach($curCustObj->custVOIPSet as $curCOV_ID => $curVOIPArray) {
+
+				$query = "SELECT * FROM SUBSCRIBER WHERE COV_ID = '" . $curCOV_ID . "' ORDER BY DISPLAY_POSITION";
+
+				$result = ibase_query($this->dbF, $query);
+
+				$cntInnerSubscriber = 0;
+				while ($row = ibase_fetch_object($result)) {
+					$cntSubIDData++;
+					$cntInnerSubscriber++;
+
+					$curCustObj->custSubIDPSet[$row->SUBS_ID]['COV_ID'] = $curCOV_ID;
+					$curCustObj->custSubIDPSet[$row->SUBS_ID]['SUBS_ID'] = $row->SUBS_ID;
+
+					$curCustObj->custSubIDPSet[$row->SUBS_ID]['SUBSCRIBER_ID'] = $row->SUBSCRIBER_ID;    // (Telefonnummer)
+					$curCustObj->custSubIDPSet[$row->SUBS_ID]['VOIP_PORT_TERMIN'] = $this->getFormatDate($row->DATE_PORTI_REQ);
+
+					// Carrier?
+					if ($row->CARRIER_ID > 0) {
+						$curCarrierCode = $this->globalCarrierData['CARRIER'][$row->CARRIER_ID]['CARRIER_CODE'];
+						$curCarrierID = $this->globalCarrierData['CARRIER'][$row->CARRIER_ID]['CARRIER_ID'];
+						$curCarrierName = $this->globalCarrierData['CARRIER'][$row->CARRIER_ID]['CARRIER_NAME'];
+
+						$curCustObj->custSubIDPSet[$row->SUBS_ID]['CARRIER_ID'] = $curCarrierID;
+						$curCustObj->custSubIDPSet[$row->SUBS_ID]['CARRIER_CODE'] = $curCarrierCode;
+						$curCustObj->custSubIDPSet[$row->SUBS_ID]['CARRIER_NAME'] = $curCarrierName;
+					}
+
+
+					// Telefonbuch-Eintrag für diese Nummer?
+					if ($row->PHON_BOOK == '1')
+						$curCustObj->custSubIDPSet[$row->SUBS_ID]['TELEFONBUCHEINTRAG'] = 'J';
+					else
+						$curCustObj->custSubIDPSet[$row->SUBS_ID]['TELEFONBUCHEINTRAG'] = 'N';
+
+
+					// Telefonnummer inversuche sperren?
+					if ($row->INVERS_SEARCH == '1')
+						$curCustObj->custSubIDPSet[$row->SUBS_ID]['TELEBUCH_SPERRE_INVERS'] = 'N';
+					else
+						$curCustObj->custSubIDPSet[$row->SUBS_ID]['TELEBUCH_SPERRE_INVERS'] = 'J';
+
+
+					// Elektr.Telefonbuch?
+					if ($row->DIGITAL_MEDIA == '1')
+						$curCustObj->custSubIDPSet[$row->SUBS_ID]['TELEBUCH_EINTRAG_ELEKT'] = 'J';
+					else
+						$curCustObj->custSubIDPSet[$row->SUBS_ID]['TELEBUCH_EINTRAG_ELEKT'] = 'N';
+
+
+					// SIP Authname
+					$curVOIP_ACCOUNT = 'VOIP_ACCOUNT_' . $cntInnerSubscriber;
+					$curCustObj->custSubIDPSet[$row->SUBS_ID][$curVOIP_ACCOUNT] = $row->SIP_AUTHNAME;
+
+
+					// SIP Passwort
+					$curVOIP_ACCOUNT_PASSWORT = 'VOIP_ACCOUNT_PASSWORT_' . $cntInnerSubscriber;
+					$curCustObj->custSubIDPSet[$row->SUBS_ID][$curVOIP_ACCOUNT_PASSWORT] = $row->SIP_PASSWORD;
+
+
+					// Vorwahl
+					$curVOIP_NATIONAL_VORWAHL = 'VOIP_NATIONAL_VORWAHL_' . $cntInnerSubscriber;
+					$val = $this->getNatVorwahl($row->SUBSCRIBER_ID);
+					$curCustObj->custSubIDPSet[$row->SUBS_ID][$curVOIP_NATIONAL_VORWAHL] = $val;
+
+
+					// Kopfnummer
+					$curVOIP_KOPFNUMMER = 'VOIP_KOPFNUMMER_' . $cntInnerSubscriber;
+					$val = $this->getKopfnummer($row->SUBSCRIBER_ID);
+					$curCustObj->custSubIDPSet[$row->SUBS_ID][$curVOIP_KOPFNUMMER] = $val;
+
+				}    // END while
+
+				ibase_free_result($result);
+
+			}    // END // Durchlauf VOIP-Daten des Kunden
+
+		}    // END // Duchlauf Customer - Handler
+
+		$this->addMessage('&sum; Ermittelt VOIP Nummern ', $cntSubIDData, 'Info');
+		$this->addMessage('&sum; Ermittelt VOIP Nummern ', $cntSubIDData, 'Sum');
 
 		return true;
 
@@ -319,13 +517,14 @@ abstract class CollectData extends Message
 
 
 					// Telefonbucheintrag?
+
 					$curCustObj->custVOIPSet[$row->COV_ID]['TELEFONBUCHEINTRAG'] = 'N';        // Default nein also N
 					if ($row->PHONE_BOOK_ENTRY_ID > 0) {
 
 						// ... Ja Telefonbucheintrag soll erstellt werden
 
 						// Erkenne ich die Art / den Umfang? ... Wenn nein... dann Tel.Eintrag auf N belassen
-						if (in_array($row->PHONE_BOOK_ENTRY_ID, $this->setPhoneBookEntryIDToVal[$this->setMandant])) {
+						if (array_key_exists($row->PHONE_BOOK_ENTRY_ID, $this->setPhoneBookEntryIDToVal[$this->setMandant])) {
 
 							// Marker Telefonbucheintrag mit J überschreiben
 							$curCustObj->custVOIPSet[$row->COV_ID]['TELEFONBUCHEINTRAG'] = 'J';
@@ -399,6 +598,7 @@ abstract class CollectData extends Message
 
 				$query = "SELECT cop.CO_ID          AS CO_ID,
                                  cop.CO_PRODUCT_ID  AS CO_PRODUCT_ID,
+                                 cop.SR_ID			AS SR_ID,
                                  p.DESCRIPTION      AS DESCRIPTION,
                                  p.PRODUCT_ID       AS PRODUCT_ID,
                                  p.PRODUCT_CODE		AS COS_ID,
@@ -435,6 +635,7 @@ abstract class CollectData extends Message
 					$curCustObj->custProductSet[$row->PRODUCT_ID]['COS_ID'] = $row->COS_ID;
 					$curCustObj->custProductSet[$row->PRODUCT_ID]['ACCOUNTNO'] = $row->ACCOUNTNO;
 					$curCustObj->custProductSet[$row->PRODUCT_ID]['ACCOUNTDESC'] = $row->ADESCRIPTION;
+					$curCustObj->custProductSet[$row->PRODUCT_ID]['SR_ID'] = $row->SR_ID;
 					// $curCustObj->custProductSet[$row->PRODUCT_ID]['ACCOUNTDESC'] = utf8_encode($row->ADESCRIPTION);
 				}
 
@@ -746,6 +947,67 @@ abstract class CollectData extends Message
 
 
 
+	// Ermittelt die Adressdaten für das Telefonbuch
+	private function getAddressPhoneBoockByCustomerIDAndTypeID($getCustomerID, $phoneBookEntryType)
+	{
+
+		// Telephonbuch ID Referenz
+		// Bei TKRZ: 0 = Kein Eintrag
+		//			10001 Standardeintrag
+		// 			10002 nur Name und Rufnummer / ohne Adresse
+		// 			10003 Wissing Heike und Ansgar
+		//			'10001' => 'A',
+		//	        '10002' => 'V',
+		//		 	'10003' => 'N',
+
+		$retArray = array();
+
+		// ID 10011 == Expliziet gewünschter Telefonbucheintrag
+		$query = "SELECT * FROM CUSTOMER_ADDRESSES WHERE CUSTOMER_ID = '" . $getCustomerID . "' AND (ADDRESS_TYPE_ID = '10010' OR ADDRESS_TYPE_ID = '10011') ORDER BY ADDRESS_TYPE_ID";
+		$result = ibase_query($this->dbF, $query);
+
+		$cnt = 0;
+		while ($row = ibase_fetch_object($result)) {
+			$cnt++;
+
+			// Nur wenn alle Daten gewünscht sind diese auch setzen
+			if ($phoneBookEntryType == 'A') {
+				$retArray['TELEBUCH_NACHNAME'] = $row->NAME;
+				$retArray['TELEBUCH_VORNAME'] = $row->FIRSTNAME;
+				$retArray['TELEBUCH_STRASSE'] = $row->STREET . ' ' . $row->HOUSENO . ' ' . $row->HOUSENO_SUPPL;
+				$retArray['TELEBUCH_PLZ'] = $row->CITYCODE;
+				$retArray['TELEBUCH_ORT'] = $row->CITY;
+				$retArray['TELEBUCH_FAX'] = $row->FAX;
+			}
+			elseif ($phoneBookEntryType == 'V') {
+				$retArray['TELEBUCH_NACHNAME'] = $row->NAME;
+				$retArray['TELEBUCH_VORNAME'] = $row->FIRSTNAME;
+			}
+			elseif ($phoneBookEntryType == 'N') {
+				$retArray['TELEBUCH_NACHNAME'] = $row->NAME;
+				$retArray['TELEBUCH_VORNAME'] = $row->FIRSTNAME;
+			}
+			else {
+				$retArray['TELEBUCH_NACHNAME'] = $row->NAME;
+				$retArray['TELEBUCH_VORNAME'] = $row->FIRSTNAME;
+			}
+
+		}
+
+		ibase_free_result($result);
+
+		return $retArray;
+	}
+
+
+
+
+
+
+
+
+
+
 	// Carrier Referenz einlesen
 	public function getCarrierRef()
 	{
@@ -793,6 +1055,60 @@ abstract class CollectData extends Message
 		return $getDate;
 
 	}   // END private function getFormatDate(...)
+
+
+
+
+
+
+
+
+
+
+	// Vorwahl extrahieren
+	public function getNatVorwahl($arg = 0)
+	{
+
+		$val = 0;
+		$pattern = $arg;
+		$search = '/(.*\d+)+( )(\d+)( )(.\d+)/';
+		$matches[1] = '';
+		$matches[3] = '';
+
+		preg_match($search, $pattern, $matches);
+		if ((isset($matches[3])) && (strlen($matches[3] > 0)))
+			$val = '0' . $matches[3];
+
+		return trim($val);
+
+	}   // END private function getNatVorwahl(...)
+
+
+
+
+
+
+
+
+
+
+	// Vorwahl extrahieren
+	public function getKopfnummer($arg = 0)
+	{
+
+		$val = 0;
+		$pattern = $arg;
+		$search = '/(.*\d+)+( )(\d+)( )(.\d+)/';
+		$matches[5] = '';
+
+		preg_match($search, $pattern, $matches);
+
+		if ((isset($matches[5])) && (strlen($matches[5] > 0)))
+			$val = $matches[5];
+
+		return trim($val);
+
+	}   // END private function getKopfnummer(...)
 
 
 

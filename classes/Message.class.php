@@ -106,7 +106,7 @@ abstract class Message
 							$curMessageStatus = "<span style=\"color: yellowgreen; \"><b>&#9654;</b></span>";
 
 						elseif ( ($curMessageStatus == 'DONE') || ($curMessageStatus == '... DONE') )
-							$curMessageStatus = "<span style=\"color: green; \"><b>&#10003;</b></span>";
+							$curMessageStatus = "<span style=\"color: green; \"><b>&nbsp;&nbsp;&nbsp;&nbsp;&#10003;</b></span>";
 
 						elseif ( ($curMessageStatus == 'FAIL') || ($curMessageStatus == '... FAIL') )
 							$curMessageStatus = "<span style=\"color: red; \"><b>&cross;</b></span>";
