@@ -16,8 +16,22 @@ abstract class CollectData extends Message
 	public $setExportType = 'FTTH';
 
 
+	// Telephonbuch ID Referenz
+	// Bei TKRZ: 0 = Kein Eintrag
+	//			10001 Standardeintrag
+	// 			10002 nur Name und Rufnummer / ohne Adresse
+	// 			10003 Wissing Heike und Ansgar
+	public $setPhoneBookEntryIDToVal = array('XYZ'  => array('1'),
+											 'TKRZ' => array('0'     => '',
+															 '10001' => 'A',
+															 '10002' => 'V',
+															 '10003' => 'N',
+											 )
+	);
+
+
 	// Nur Customer einlesen der Kundennummer x besitzt?
-	public $setOnlyExampleCustomerID = '';
+	public $setOnlyExampleCustomerID = '';    // 20010004
 
 
 	// Wie viele Customer sollen eingelesen werden?
@@ -49,7 +63,6 @@ abstract class CollectData extends Message
 											'TKRZ' => array('10004', '2')
 	);
 
-
 	// Customer mit folgender Nummer NICHT einlesen
 	public $setDoNotReadThisCustomerIDs = array('20010000');
 
@@ -59,8 +72,11 @@ abstract class CollectData extends Message
 	// private $setReadOnlySignedContracts = true;
 
 
-	// Vertragstatus muss grösser Null sein? (bool var)
+	// Vertragstatus muss grösser Null sein? (bool var)	(DEFAULT false)
 	private $setReadOnlyContractStatusAboveNull = false;
+
+	// VOIPsatus muss grösser Null sein? (bool var)	(DEFAULT true)
+	private $setReadOnlyVOIPStatusAboveNull = true;
 
 
 	////////////////////////////////// Do not edit below this line!!! /////////////////////////////
@@ -76,6 +92,11 @@ abstract class CollectData extends Message
 
 	// Var-Array enthält alle Customer/Kunden Objekt-Handler
 	public $custArray = array();
+
+	// Var-Array enhält alle Carrier
+	// Tabelle: CARRIER
+	// Feld:    *
+	public $globalCarrierData = array();
 
 
 
@@ -139,6 +160,18 @@ abstract class CollectData extends Message
 
 
 
+		// Carrier Referenz einlesen
+		$this->outNow('Carrier Referenz einlesen', 'START ...', 'Runtime');
+		if ($this->getCarrierRef())
+			$this->outNow('Carrier Referenz einlesen', '... DONE', 'Runtime');
+		else {
+			$this->outNow('Carrier Referenz einlesen', '... FAIL', 'Runtime');
+
+			return false;
+		}
+
+
+
 		// Customer einlesen die in der angegebenen GruppenID enthalten sind
 		$this->outNow('Customer einlesen die in der angegebenen GruppenID enthalten sind', 'START ...', 'Runtime');
 		if ($this->getCustomerByGroupID())
@@ -175,8 +208,23 @@ abstract class CollectData extends Message
 
 
 
+		// VOIP Daten einlesen
+		$this->outNow('VOIP Daten einlesen', 'START ...', 'Runtime');
+		if ($this->getCOVoicedataByCOID())
+			$this->outNow('VOIP Daten einlesen', '... DONE', 'Runtime');
+		else {
+			$this->outNow('VOIP Daten einlesen', '... FAIL', 'Runtime');
+
+			return false;
+		}
 
 
+
+
+
+
+
+		// VOIP - Telefonnummern einlesen
 
 
 
@@ -202,13 +250,127 @@ abstract class CollectData extends Message
 
 
 
+	// VOIP - Telefonnummern einlesen
+	private function getSubscriberByCOVID()
+	{
+
+
+
+		return true;
+
+	}    // END private function getSubscriberByCOVID()
 
 
 
 
 
 
-	// CO_Products einlesen die zu den Contracts gehören
+
+
+
+
+	// VOIP Daten einlesen -> Build custVOIPSet
+	private function getCOVoicedataByCOID()
+	{
+
+		// Filter Info
+		// Nur Voice-Data dessen Status_ID > 0 ist?
+		if ($this->setReadOnlyVOIPStatusAboveNull)
+			$this->addMessage('Nur VOIP - Daten deren Status_ID > 0 (Null) ist', 'ja', 'Filter');
+
+
+		// Counter Vars
+		$cntVOIPData = '0';
+		$cntNoVOIPData = '0';
+
+
+		// Duchlauf Customer - Handler
+		foreach($this->custArray as $customerIDFromObject => $curCustObj) {
+
+			// Aktuelle KundenNummer
+			$curCustomerID = $curCustObj->custExpSet['KUNDEN_NR'];
+
+
+			// Durchlauf Verträge des Kunden für bezogene Produkte einlesen
+			foreach($curCustObj->custContractSet as $curContractID => $curContractArray) {
+
+				// Nur Voice-Data dessen Status_ID > 0 ist?
+				if ($this->setReadOnlyVOIPStatusAboveNull)
+					$query = "SELECT * FROM CO_VOICEDATA WHERE CO_ID = '" . $curContractID . "' AND STATUS_ID > '0' ORDER BY COV_ID";
+				else
+					$query = "SELECT * FROM CO_VOICEDATA WHERE CO_ID = '" . $curContractID . "' ORDER BY COV_ID";
+
+				$result = ibase_query($this->dbF, $query);
+
+				$boolGotVOIP = false;
+				while ($row = ibase_fetch_object($result)) {
+
+					$boolGotVOIP = true;
+
+					$cntVOIPData++;
+
+					$curCustObj->custVOIPSet[$row->COV_ID]['CONTRACT_ID'] = $curContractID;
+					$curCustObj->custVOIPSet[$row->COV_ID]['COV_ID'] = $row->COV_ID;
+
+
+					// EGN_VERFREMDUNG?
+					$val = ($row->IB_REDUCED == 1) ? 'J' : 'N';    // $val ... wenn $row->IB_REDUCED == 1 dann J sonst N
+					$curCustObj->custVOIPSet[$row->COV_ID]['EGN_VERFREMDUNG'] = $val;
+
+
+					// Telefonbucheintrag?
+					$curCustObj->custVOIPSet[$row->COV_ID]['TELEFONBUCHEINTRAG'] = 'N';        // Default nein also N
+					if ($row->PHONE_BOOK_ENTRY_ID > 0) {
+
+						// ... Ja Telefonbucheintrag soll erstellt werden
+
+						// Erkenne ich die Art / den Umfang? ... Wenn nein... dann Tel.Eintrag auf N belassen
+						if (in_array($row->PHONE_BOOK_ENTRY_ID, $this->setPhoneBookEntryIDToVal[$this->setMandant])) {
+
+							// Marker Telefonbucheintrag mit J überschreiben
+							$curCustObj->custVOIPSet[$row->COV_ID]['TELEFONBUCHEINTRAG'] = 'J';
+
+							// Telefonbuch-Umfang festlegen:
+							$curCustObj->custVOIPSet[$row->COV_ID]['TELEFONBUCH_UMFANG'] = $this->setPhoneBookEntryIDToVal[$this->setMandant][$row->PHONE_BOOK_ENTRY_ID];
+						}
+					}
+
+					// Zusätzlich Informationen speichern
+					$curCustObj->custVOIPSet[$row->COV_ID]['DATE_ACTIVE'] = $row->DATE_ACTIVE;
+					$curCustObj->custVOIPSet[$row->COV_ID]['DATE_DEACTIVE'] = $row->DATE_DEACTIVE;
+
+				}    // END while ...
+
+				ibase_free_result($result);
+
+				if (!$boolGotVOIP)
+					$cntNoVOIPData++;
+
+			}    // END // Durchlauf Verträge des Kunden für bezogene Produkte einlesen
+
+
+		}    // END // Duchlauf Customer - Handler
+
+		$this->addMessage('&sum; Ermittelt VOIP ', $cntVOIPData, 'Info');
+		$this->addMessage('&sum; Ermittelt sonstige Dienste ', $cntNoVOIPData, 'Info');
+
+		$this->addMessage('&sum; Ermittelt VOIP ', $cntVOIPData, 'Sum');
+		$this->addMessage('&sum; Ermittelt sonstige Dienste ', $cntNoVOIPData, 'Sum');
+
+		return true;
+
+	}    // END private function getCOVoicedataByCOID()
+
+
+
+
+
+
+
+
+
+
+	// CO_Products einlesen die zu den Contracts gehören -> Build: custProductSet
 	private function getProductsByContractID()
 	{
 
@@ -316,7 +478,7 @@ abstract class CollectData extends Message
 
 
 
-	// Contracts einlesen die zu den ausgewählten Customer gehören
+	// Contracts einlesen die zu den ausgewählten Customer gehören -> Build: custContractSet
 	private function getContractsByCustomerID()
 	{
 
@@ -332,6 +494,12 @@ abstract class CollectData extends Message
 			// Add für die Query durch Filter gegeben
 			$addQueryFilter = " AND DATE_SIGNED != '' ";
 		}
+
+
+		// Filter Info:
+		// Nur Verträge einlesen dessen Status größer Null ist?
+		if ($this->setReadOnlyContractStatusAboveNull)
+			$this->addMessage('Nur Verträge deren Status_ID > 0 (Null) ist', 'ja', 'Filter');
 
 
 		// Counter Vars
@@ -350,10 +518,8 @@ abstract class CollectData extends Message
 			$curCustomerID = $curCustObj->custExpSet['KUNDEN_NR'];
 
 			// Nur Verträge einlesen dessen Status größer Null ist?
-			if ($this->setReadOnlyContractStatusAboveNull) {
+			if ($this->setReadOnlyContractStatusAboveNull)
 				$query = "SELECT * FROM CONTRACTS WHERE CUSTOMER_ID = '" . $curCustomerID . "' AND STATUS_ID > '0' " . $addQueryFilter . " ORDER BY CO_ID";
-				$this->addMessage('Nur Verträge deren Status_ID > 0 (Null) ist', 'ja', 'Filter');
-			}
 			else
 				$query = "SELECT * FROM CONTRACTS WHERE CUSTOMER_ID = '" . $curCustomerID . "'  " . $addQueryFilter . " ORDER BY CO_ID";
 
@@ -372,7 +538,6 @@ abstract class CollectData extends Message
 
 				continue;
 			}
-
 
 
 			ibase_free_result($result);
@@ -426,7 +591,7 @@ abstract class CollectData extends Message
 
 
 
-	// Customer einlesen die in der angegebenen GruppenID enthalten sind
+	// Customer einlesen die in der angegebenen GruppenID enthalten sind -> Build: $this->custArrays
 	private function getCustomerByGroupID()
 	{
 
@@ -571,6 +736,43 @@ abstract class CollectData extends Message
 		return true;
 
 	}   // END private function getCustomerByGroupID()
+
+
+
+
+
+
+
+
+
+
+	// Carrier Referenz einlesen
+	public function getCarrierRef()
+	{
+
+		// Counter Var
+		$cntCarrier = '0';
+
+		$query = 'SELECT * FROM CARRIER ORDER BY CARRIER_ID';
+
+		$result = ibase_query($this->dbF, $query);
+
+		while ($row = ibase_fetch_object($result)) {
+
+			$cntCarrier++;
+
+			$this->globalCarrierData['CARRIER'][$row->CARRIER_ID]['CARRIER_ID'] = $row->CARRIER_ID;
+			$this->globalCarrierData['CARRIER'][$row->CARRIER_ID]['CARRIER_NAME'] = $row->NAME;
+			$this->globalCarrierData['CARRIER'][$row->CARRIER_ID]['CARRIER_CODE'] = $row->CARRIER_CODE;
+		}
+
+		ibase_free_result($result);
+
+		$this->addMessage('&sum; Ermittelte Carrier ', $cntCarrier, 'Sum');
+
+		return true;
+
+	}   // END private function getCarrierRef()
 
 
 

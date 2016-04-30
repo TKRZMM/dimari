@@ -99,8 +99,20 @@ abstract class Message
 
 
 					// Wenn der Status der aktuelle Message gesetzt ist ... und er nicht 'unset' ist... dann ausgeben
-					if ((isset($curMessageArray['messageStatus'][$fieldIndex])) && ($curMessageArray['messageStatus'][$fieldIndex] != 'unset'))
-						print ('<td class="bottomLine">' . $curMessageArray['messageStatus'][$fieldIndex] . '</td>');
+					if ((isset($curMessageArray['messageStatus'][$fieldIndex])) && ($curMessageArray['messageStatus'][$fieldIndex] != 'unset')){
+						$curMessageStatus = $curMessageArray['messageStatus'][$fieldIndex];
+
+						if ( ($curMessageStatus == 'START') || ($curMessageStatus == 'START ...') )
+							$curMessageStatus = "<span style=\"color: yellowgreen; \"><b>&#9654;</b></span>";
+
+						elseif ( ($curMessageStatus == 'DONE') || ($curMessageStatus == '... DONE') )
+							$curMessageStatus = "<span style=\"color: green; \"><b>&#10003;</b></span>";
+
+						elseif ( ($curMessageStatus == 'FAIL') || ($curMessageStatus == '... FAIL') )
+							$curMessageStatus = "<span style=\"color: red; \"><b>&cross;</b></span>";
+
+						print ('<td class="bottomLine">' . $curMessageStatus . '</td>');
+					}
 					else
 						print ('<td class="bottomLine">&nbsp;</td>');
 

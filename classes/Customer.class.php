@@ -22,6 +22,12 @@ class Customer
 	public $custProductSet = array();
 
 
+	// VOIP Array des Kunden
+	public $custVOIPSet = array();
+
+	// SubID Array des Kunden	(Telefonnummer)
+	public $custSubIDPSet = array();
+
 
 
 
