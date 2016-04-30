@@ -319,7 +319,7 @@ class DimariExp_TKRZ_FTTH extends Dimari_TKRZ_FTTH
 
 					$this->addExp($customerArray, 'TV_DIENSTE', $exp, $cntRowEntry);
 					$this->addExp($customerArray, 'ROUTER_MAC_ADR', $exp, $cntRowEntry);
-					$this->addExp($customerArray, 'FTTH_CUS_ID', $exp, $cntRowEntry);
+					$this->addExp($customerArray, 'FTTH_CUST_ID', $exp, $cntRowEntry);
 					$this->addExp($customerArray, 'DOCSIS', $exp, $cntRowEntry);
 					$this->addExp($customerArray, 'BRIDGE_MODE', $exp, $cntRowEntry);
 					$this->addExp($customerArray, 'ELVIS_HAUPT_ACCOUNT', $exp, $cntRowEntry);

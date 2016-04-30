@@ -119,7 +119,7 @@ elseif ($mandant == 'Schuettorf') {
 //echo "</pre><br>";
 
 
-print ('<div style="position: fixed; bottom: 5px; right: 5px;">DONE</div>');
+print ('<div style="position: fixed; bottom: 5px; right: 5px;"><b>DONE</b></div>');
 
 
 include 'includes/footer.php';
