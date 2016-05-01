@@ -33,10 +33,12 @@ abstract class CollectData extends Message
 	);
 
 
+	//  ACHTUNG Hauptverteiler, Kabelverzweiger und DSLAM_PORT habe ich nur bei GENEXIS - Kunden!
+	//  ACHTUNG keine Bridge-Daten bei DOCSIS Kunden... ist richtig so!
 	// Nur Customer einlesen der Kundennummer x besitzt?
-	public $setOnlyExampleCustomerID = '20010272';    // 20010004
+	public $setOnlyExampleCustomerID = '';    // 20010004
 //	public $setOnlyExampleCustomerID = '20010028';    // 20010004
-	// 20010028 ... Kunde mit Telefonbucheintrag (Docsis)
+//	 20010028 ... Kunde mit Telefonbucheintrag (Docsis)
 	// 20010184 ... Kunde mit mehr als einer Telefonnummer
 	// 20010230 ... ?
 	// 20010272 ... GENEXIS Kunde
@@ -349,7 +351,7 @@ abstract class CollectData extends Message
 
 //		// IDEBUG pre - tag
 		echo "<pre><hr>";
-		print_r($this->custArray);
+//		print_r($this->custArray);
 //		foreach ($this->custArray as $x)
 //			print_r($x->custExpSet);
 		echo "<hr></pre><br>";
@@ -374,6 +376,7 @@ abstract class CollectData extends Message
 	// Ermittel Kunden GENEXIS oder DOCSIS
 	private function getGenexisOrDocsis()
 	{
+
 		$delCnt = '0';
 
 		// Duchlauf Customer - Handler
@@ -397,11 +400,11 @@ abstract class CollectData extends Message
 
 				$curRP_ID = $productArray['SR_RP_ID'];
 
-				if (in_array($curRP_ID, $this->setModemType[$this->setMandant]['GENEXIS'])){
+				if (in_array($curRP_ID, $this->setModemType[$this->setMandant]['GENEXIS'])) {
 					$curType = 'GENEXIS';
 					break;
 				}
-				elseif (in_array($curRP_ID, $this->setModemType[$this->setMandant]['DOCSIS'])){
+				elseif (in_array($curRP_ID, $this->setModemType[$this->setMandant]['DOCSIS'])) {
 
 					$curType = 'DOCSIS';
 					break;
@@ -412,7 +415,7 @@ abstract class CollectData extends Message
 			}    // END // Durchlauf Produkte
 
 			// Wenn weder GENEXIS nocht DOCSIS lösche ich den Customer aus der Export - Liste
-			if ($curType == 'unknown'){
+			if ($curType == 'unknown') {
 				$delCnt++;
 				unset($this->custArray[$curCustomerID]);
 			}
@@ -571,6 +574,21 @@ abstract class CollectData extends Message
 				ibase_free_result($result);
 
 
+
+				// Jetzt MyGate -> unit -> port ermitteln
+				// 1. Port ermitteln
+				$returnPortArray = $this->getPortAndParentIDBySR_ID($curSR_ID);
+				$curCustObj->custProductSet[$curProductID]['DSLAM_PORT'] = $returnPortArray['PORT'];
+
+				// 2. Unit ermitteln
+				$returnUnitArray = $this->getUnitAndParentIDBySD_ID($returnPortArray['PARENT_ID']);
+				$curCustObj->custProductSet[$curProductID]['KABELVERZWEIGER'] = $returnUnitArray['UNIT'];
+
+				// 3. MFG (MyGate) ermitteln
+				$returnMFGArray = $this->getMFGBySD_ID($returnUnitArray['PARENT_ID']);
+				$curCustObj->custProductSet[$curProductID]['HAUPTVERTEILER'] = $returnMFGArray['MFG'];
+				$curCustObj->custProductSet[$curProductID]['HAUPTVERTEILER_IP'] = $returnMFGArray['MFG_IP'];
+
 			}    // END // Durchlauf Produkte des Kunden
 
 		}    // END // Duchlauf Customer - Handler
@@ -581,6 +599,118 @@ abstract class CollectData extends Message
 		return true;
 
 	}    // END private function getHardwareEntrysByCoProducts()
+
+
+
+
+
+
+
+
+
+
+	// Ermittelt das MFG eines Routers
+	private function getMFGBySD_ID($getSD_ID)
+	{
+
+		$return = array('MFG'    => '',
+						'MFG_IP' => '');
+
+		$query = "SELECT *
+					FROM SERVICE_DATA
+					WHERE SD_ID = '" . $getSD_ID . "'
+					  AND COMPONENT_ID ='10003'";
+
+
+		$result = ibase_query($this->dbF, $query);
+
+		while ($row = @ibase_fetch_object($result)) {
+
+			$return['MFG'] = $row->DESCRIPTION;
+			$return['MFG_IP'] = $row->DATA_1;
+		}
+
+		ibase_free_result($result);
+
+		return $return;
+
+	}    // END private function getUnitAndParentIDBySD_ID($getSD_ID)
+
+
+
+
+
+
+
+
+
+
+	// Ermittelt die Unit eines Routers
+	private function getUnitAndParentIDBySD_ID($getSD_ID)
+	{
+
+		$return = array('UNIT'      => '',
+						'PARENT_ID' => ''
+		);
+
+		$query = "SELECT *
+					FROM SERVICE_DATA
+					WHERE SD_ID = '" . $getSD_ID . "'
+					  AND COMPONENT_ID ='10035'";
+
+
+		$result = ibase_query($this->dbF, $query);
+
+		while ($row = @ibase_fetch_object($result)) {
+
+			$return['UNIT'] = $row->DESCRIPTION;
+			$return['PARENT_ID'] = $row->PARENT_ID;
+		}
+
+		ibase_free_result($result);
+
+		return $return;
+
+	}    // END private function getUnitAndParentIDBySD_ID($getSD_ID)
+
+
+
+
+
+
+
+
+
+
+	// Ermittelt den Port eines Routers
+	private function getPortAndParentIDBySR_ID($getSR_ID)
+	{
+
+		$return = array('PORT'      => '',
+						'PARENT_ID' => ''
+		);
+
+		$query = "SELECT sr.SR_ID	AS	SR_SR_ID,
+								 sr.RP_ID	AS  SR_RP_ID,
+								 sd.*
+							FROM SERVICE_RESOURCE_CONTENTS sr
+						LEFT JOIN SERVICE_DATA sd ON sd.SD_ID = sr.SD_ID
+							WHERE sr.SR_ID = '" . $getSR_ID . "'
+							AND sd.COMPONENT_ID ='10036'";
+
+		$result = ibase_query($this->dbF, $query);
+
+		while ($row = @ibase_fetch_object($result)) {
+
+			$return['PORT'] = $row->DESCRIPTION;
+			$return['PARENT_ID'] = $row->PARENT_ID;
+		}
+
+		ibase_free_result($result);
+
+		return $return;
+
+	}    // END private function getPortAndParentIDBySD_ID($getSD_ID)
 
 
 
@@ -1025,6 +1155,8 @@ abstract class CollectData extends Message
                                  p.DESCRIPTION      AS DESCRIPTION,
                                  p.PRODUCT_ID       AS PRODUCT_ID,
                                  p.PRODUCT_CODE		AS COS_ID,
+                                 p.INFO_TITLE1		AS PINFO_TITLE1,
+                                 p.INFO_TITLE2		AS PINFO_TITLE2,
                                  cop.DATE_ACTIVE    AS COPDATE_ACTIVE,
                                  cop.DATE_DEACTIVE  AS COPDATE_DEACTIVE,
                                  a.ACCOUNTNO        AS ACCOUNTNO,
@@ -1060,6 +1192,9 @@ abstract class CollectData extends Message
 					$curCustObj->custProductSet[$row->PRODUCT_ID]['ACCOUNTDESC'] = $row->ADESCRIPTION;
 					$curCustObj->custProductSet[$row->PRODUCT_ID]['SR_ID'] = $row->SR_ID;
 					// $curCustObj->custProductSet[$row->PRODUCT_ID]['ACCOUNTDESC'] = utf8_encode($row->ADESCRIPTION);
+
+					$curCustObj->custProductSet[$row->PRODUCT_ID]['INFO_TITLE1'] = $row->PINFO_TITLE1;
+					$curCustObj->custProductSet[$row->PRODUCT_ID]['INFO_TITLE2'] = $row->PINFO_TITLE2;
 				}
 
 				ibase_free_result($result);

@@ -86,8 +86,11 @@ class OutData extends CollectData
 
 			$curCustObj->custExpSet['STANDORT'] = 'KD';
 			$curCustObj->custExpSet['INSTALLATIONSTERMIN'] = $getContractDataArray['INSTALLATIONSTERMIN'];
-//			$curCustObj->custExpSet['HAUPTVERTEILER'] = '';                // 25
-//			$curCustObj->custExpSet['KABELVERZWEIGER'] = '';
+
+			$getMFGUnitPortDataArray = $this->getMFGUnitPortDataByCustomerID($curCustomerID);
+
+			$curCustObj->custExpSet['HAUPTVERTEILER'] = $getMFGUnitPortDataArray['HAUPTVERTEILER'];                // 25
+			$curCustObj->custExpSet['KABELVERZWEIGER'] = $getMFGUnitPortDataArray['KABELVERZWEIGER'];
 			$curCustObj->custExpSet['DOPPELADER_1'] = '';
 			$curCustObj->custExpSet['DOPPELADER_2'] = '';
 
@@ -142,20 +145,20 @@ class OutData extends CollectData
 			$curCustObj->custExpSet['TELEBUCH_SPERRE_INVERS'] = $getTelefonbuchData['TELEBUCH_SPERRE_INVERS'];
 			$curCustObj->custExpSet['TELEBUCH_EINTRAG_ELEKT'] = $getTelefonbuchData['TELEBUCH_EINTRAG_ELEKT'];
 
-//			for($i = 4; $i <= 10; $i++) {
-//				$curCustObj->custExpSet['VOIP_ACCOUNT_' . $i] = '';
-//				$curCustObj->custExpSet['VOIP_ACCOUNT_PASSWORT_' . $i] = '';
-//				$curCustObj->custExpSet['VOIP_NATIONAL_VORWAHL_' . $i] = '';
-//				$curCustObj->custExpSet['VOIP_KOPFNUMMER_' . $i] = '';
-//				$curCustObj->custExpSet['VOIP_TRANSACTION_NO_' . $i] = '';
-//			}
+			for($i = 4; $i <= 10; $i++) {
+				$curCustObj->custExpSet['VOIP_ACCOUNT_' . $i] = '';
+				$curCustObj->custExpSet['VOIP_ACCOUNT_PASSWORT_' . $i] = '';
+				$curCustObj->custExpSet['VOIP_NATIONAL_VORWAHL_' . $i] = '';
+				$curCustObj->custExpSet['VOIP_KOPFNUMMER_' . $i] = '';
+				$curCustObj->custExpSet['VOIP_TRANSACTION_NO_' . $i] = '';
+			}
 
 			$curCustObj->custExpSet['VOIP_ABG_PORT_TERMIN'] = '';
 			$curCustObj->custExpSet['VOIP_ABG_PORT_AUF_CARRIER'] = '';
-//			$curCustObj->custExpSet['DSLAM_PORT'] = '';
+			$curCustObj->custExpSet['DSLAM_PORT'] = $getMFGUnitPortDataArray['DSLAM_PORT'];
 			$curCustObj->custExpSet['TELEFONBUCH_UMFANG'] = $getTelefonbuchData['TELEFONBUCH_UMFANG'];
-//
-//
+
+
 			$curCustObj->custExpSet['TV_DIENSTE'] = $getVOIPDataArray['TV_DIENSTE'];
 			$curCustObj->custExpSet['ROUTER_MAC_ADR'] = $getRouterDataArray['ROUTER_MAC_ADR'];
 
@@ -166,12 +169,16 @@ class OutData extends CollectData
 			else
 				$curCustObj->custExpSet['DOCSIS'] = 'N';
 
-//			$curCustObj->custExpSet['BRIDGE_MODE'] = '';
+			$getBridgeDataArray = $this->getBridgeModeByCustomerID($curCustomerID);
+			$curCustObj->custExpSet['BRIDGE_MODE'] = $getBridgeDataArray['BRIDGE_MODE'];
 
 			$getElvisDataArray = $this->getElvisByCustomerID($curCustomerID);
 			$curCustObj->custExpSet['ELVIS_HAUPT_ACCOUNT'] = $getElvisDataArray['ELVIS_HAUPT_ACCOUNT'];
 			$curCustObj->custExpSet['CPE_VOIP_ACCOUNT_2'] = $getElvisDataArray ['CPE_VOIP_ACCOUNT_2'];
-//			$curCustObj->custExpSet['BANDBREITE'] = '';
+
+
+			$getBandbreiteDataArray = $this->getBandbreiteByCustomerID($curCustomerID);
+			$curCustObj->custExpSet['BANDBREITE'] = $getBandbreiteDataArray['BANDBREITE'];
 
 		}
 
@@ -181,10 +188,175 @@ class OutData extends CollectData
 
 
 
+
+
+
+
+
+
+	// Bandbreite ermitteln
+	private function getBandbreiteByCustomerID($curCustomerID)
+	{
+
+		$return = array('BANDBREITE' => '');
+
+		// Aktuelle Customer-Klassen-Objekt zuweisen ... Grund: einfachere weitere Bearbeitung im Code
+		$curCustomerObj = $this->custArray[$curCustomerID];
+
+
+		// Prüfung auf custProductSet
+		if ((!isset($curCustomerObj->custProductSet)) || (count($curCustomerObj->custProductSet) < 1))
+			return $return;
+
+		$boolGotWeb = false;
+		$curBandbreite = '100/10';
+
+		// Durchlauf Produkte
+		foreach($curCustomerObj->custProductSet as $curProductID => $productArray) {
+
+			// Überhaupt ein Internet-Produkt vorhanden?
+			if ($productArray['ACCOUNTNO'] == '85300')
+				$boolGotWeb = true;
+
+			// Speedupgrade?
+			if ( ($curProductID == '10072') || ($curProductID == '10028') )
+				$curBandbreite = '200/20';
+
+		}    // END // Durchlauf Produkte
+
+		if (!$boolGotWeb)
+			return $return;
+
+		$return['BANDBREITE'] = $curBandbreite;
+
+		return $return;
+
+	}    // END private function getBandbreiteByCustomerID($curCustomerID)
+
+
+
+
+
+
+
+
+
+
+	// BridgeMode ermitteln
+	private function getBridgeModeByCustomerID($curCustomerID)
+	{
+
+		$return = array('BRIDGE_MODE' => '');
+
+		// Aktuelle Customer-Klassen-Objekt zuweisen ... Grund: einfachere weitere Bearbeitung im Code
+		$curCustomerObj = $this->custArray[$curCustomerID];
+
+
+		// Prüfung auf custProductSet
+		if ((!isset($curCustomerObj->custProductSet)) || (count($curCustomerObj->custProductSet) < 1))
+			return $return;
+
+		// Wenn DOCSIS ... gibt es kein Bridge-Mode... kann also Methode verlassen
+		if ($curCustomerObj->custModemType == 'DOCSIS')
+			return $return;
+
+		$gotTitle1 = false;
+		$gotTitle2 = false;
+
+
+		// Durchlauf Produkte
+		foreach($curCustomerObj->custProductSet as $curProductID => $productArray) {
+
+			if ((isset($productArray['SR_RP_ID'])) && (strlen($productArray['SR_RP_ID']) > 1)) {
+
+				if ((isset($productArray['INFO_TITLE1'])) && (strlen($productArray['INFO_TITLE1']) > 1))
+					$gotTitle1 = true;
+
+				if ((isset($productArray['INFO_TITLE2'])) && (strlen($productArray['INFO_TITLE2']) > 1))
+					$gotTitle2 = true;
+
+				// Bridge? = N N
+				if ((!$gotTitle1) && (!$gotTitle2))
+					$curBridge = 'BRIDGE';    // N und N
+
+				elseif ((!$gotTitle1) && ($gotTitle2))
+					$curBridge = 'IPFON';    // N und J
+
+				else
+					$curBridge = 'KEIN';    // sonstig
+
+				$return['BRIDGE_MODE'] = $curBridge;
+
+				return $return;
+
+			}
+
+		}    // END // Durchlauf Produkte
+
+
+		return $return;
+
+	}    // END private function getBridgeModeByCustomerID($curCustomerID)
+
+
+
+
+
+
+
+
+
+
+	// MFG UNIT PORT
+	private function getMFGUnitPortDataByCustomerID($curCustomerID)
+	{
+
+		$return = array('DSLAM_PORT'      => '',
+						'KABELVERZWEIGER' => '',
+						'HAUPTVERTEILER'  => ''
+		);
+
+		// Aktuelle Customer-Klassen-Objekt zuweisen ... Grund: einfachere weitere Bearbeitung im Code
+		$curCustomerObj = $this->custArray[$curCustomerID];
+
+
+		// Prüfung auf custProductSet
+		if ((!isset($curCustomerObj->custProductSet)) || (count($curCustomerObj->custProductSet) < 1))
+			return $return;
+
+
+		// Durchlauf Produkte
+		foreach($curCustomerObj->custProductSet as $curProductID => $productArray) {
+
+			if ((isset($productArray['HAUPTVERTEILER'])) && (strlen($productArray['HAUPTVERTEILER']) > 0)) {
+
+				$return['HAUPTVERTEILER'] = $productArray['HAUPTVERTEILER'];
+				$return['KABELVERZWEIGER'] = $productArray['KABELVERZWEIGER'];
+				$return['DSLAM_PORT'] = $productArray['DSLAM_PORT'];
+
+				return $return;
+			}
+
+		}
+
+		return $return;
+
+	}    // END private function getMFGUnitPortDataByCustomerID($curCustomerID)
+
+
+
+
+
+
+
+
+
+
 	private function getElvisByCustomerID($curCustomerID)
 	{
+
 		$return = array('ELVIS_HAUPT_ACCOUNT' => '',
-						'CPE_VOIP_ACCOUNT_2' => ''
+						'CPE_VOIP_ACCOUNT_2'  => ''
 		);
 
 		// Aktuelle Customer-Klassen-Objekt zuweisen ... Grund: einfachere weitere Bearbeitung im Code
@@ -207,7 +379,10 @@ class OutData extends CollectData
 
 		return $return;
 
-	}	// END private function getElvisByCustomerID($curCustomerID)
+	}    // END private function getElvisByCustomerID($curCustomerID)
+
+
+
 
 
 
@@ -239,7 +414,7 @@ class OutData extends CollectData
 			if ((!isset($productArray['SR_RP_ID'])) || (strlen($productArray['SR_RP_ID']) < 1))
 				continue;
 
-			if ($curCustomerObj->custModemType == 'DOCSIS'){
+			if ($curCustomerObj->custModemType == 'DOCSIS') {
 				$return['ROUTER_MODELL'] = $productArray['PRODUCT_NAME'];
 
 				// DATA 1 = MAC WEB
@@ -249,7 +424,7 @@ class OutData extends CollectData
 				$return['ROUTER_SERIEN_NR'] = $productArray['SR_DATA_3'];
 			}
 
-			elseif ($curCustomerObj->custModemType == 'GENEXIS'){
+			elseif ($curCustomerObj->custModemType == 'GENEXIS') {
 				$return['ROUTER_MODELL'] = $productArray['PRODUCT_NAME'];
 
 				// DATA 1 = MAC WEB
