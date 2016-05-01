@@ -12,6 +12,9 @@ abstract class CollectData extends Message
 	// TKRZ / RheiNet / Schuettorf
 	public $setMandant = 'TKRZ';
 
+	// 0 TKRZ / 1 RheiNet / ? Schuettorf
+	public $setMandantID = '0';
+
 	// Export Typ: FTTC oder FTTH
 	public $setExportType = 'FTTH';
 
@@ -31,13 +34,19 @@ abstract class CollectData extends Message
 
 
 	// Nur Customer einlesen der Kundennummer x besitzt?
-	public $setOnlyExampleCustomerID = '20010028';    // 20010004
-	// 20010028 ... Kunde mit Telefonbucheintrag
+	public $setOnlyExampleCustomerID = '20010272';    // 20010004
+//	public $setOnlyExampleCustomerID = '20010028';    // 20010004
+	// 20010028 ... Kunde mit Telefonbucheintrag (Docsis)
+	// 20010184 ... Kunde mit mehr als einer Telefonnummer
+	// 20010230 ... ?
+	// 20010272 ... GENEXIS Kunde
+	// 20010043 ... Weder GENEXIS noch Arris
+	// 20010296 ... GENEXIS + TV
 
 
 	// Wie viele Customer sollen eingelesen werden?
 	// 0 für keine Einschränkung beim Limit
-	public $setReadLimitCustomer = '1111110';
+	public $setReadLimitCustomer = '0';
 
 
 	// Customer einlesen die in der Customer Gruppe ... sind
@@ -67,20 +76,45 @@ abstract class CollectData extends Message
 	// Customer mit folgender Nummer NICHT einlesen
 	public $setDoNotReadThisCustomerIDs = array('20010000');
 
-
-	// Sollen nur unterzeichnete Verträge ermittelt werden? (bool var)
-	// Abschnitt nicht programmiert!!!
-	// private $setReadOnlySignedContracts = true;
-
-
 	// Vertragstatus muss grösser Null sein? (bool var)	(DEFAULT false)
 	private $setReadOnlyContractStatusAboveNull = false;
 
 	// VOIPsatus muss grösser Null sein? (bool var)	(DEFAULT true)
 	private $setReadOnlyVOIPStatusAboveNull = true;
 
+	// Sollen nur unterzeichnete Verträge ermittelt werden? (bool var)
+	// Abschnitt nicht programmiert!!!
+	// private $setReadOnlySignedContracts = true;
+
+	// Produkt-Bereinigung
+	// Wenn Produkt ID a und Produkt ID b ... dann lösche a und behalte b
+	// Format: Kennung Mandant => a => b
+	public $setClearProduct = array('XYZ'  => array('1' => '2'),
+									'TKRZ' => array('10035' => '10064')
+	);
+
+
+	// Produkt-Bereinigung
+	// Wenn Produkt vorhanden ist... lösche ich es aus der Exportliste
+	// Format: Kennung Mandant => DelProduktID
+	public $setDelProduct = array('XYZ'  => array('1', '2'),
+								  'TKRZ' => array('10036', '10030')
+	);
+
+
+	// GENEXIS ... DOCSIS Unterscheidung
+	// Tabelle: RESOURCE_PACKAGES
+	// Feld:    RP_ID
+	public $setModemType = array('XYZ'  => array('1', '2'),
+								 'TKRZ' => array('GENEXIS' => array('10007', '10009'),
+												 'DOCSIS'  => array('10015', '10006'))
+	);
+
+	// Gellöschte Kunden der Exportliste anzeigen die nicht Doscis oder Arris sind? (Default false)
+	public $showDeletedCustomerNumberByModemType = false;
 
 	////////////////////////////////// Do not edit below this line!!! /////////////////////////////
+
 
 
 	// Datenbank Variable ... werden durch den Construktor gesetzt
@@ -244,14 +278,80 @@ abstract class CollectData extends Message
 		}
 
 
+		// Bereinige Cisco Kabelmodem und Arris Kabelmodem zugunsten von Arris
+		$this->outNow('Bereinige Produkte z.B.: Cisco Modem und Arris Modem zugunsten von Arris', 'START ...', 'Runtime');
+		if ($this->cleanResetProductVars())
+			$this->outNow('Bereinige Produkte z.B.: Cisco Modem und Arris Modem zugunsten von Arris', '... DONE', 'Runtime');
+		else {
+			$this->outNow('Bereinige Produkte z.B.: Cisco Modem und Arris Modem zugunsten von Arris', '... FAIL', 'Runtime');
+
+			return false;
+		}
 
 
+		// Bereinige Produk-Liste z.B. von TAE - Adapter
+		$this->outNow('Bereinige Produk-Liste z.B. von TAE - Adapter', 'START ...', 'Runtime');
+		if ($this->cleanProductVars())
+			$this->outNow('Bereinige Produk-Liste z.B. von TAE - Adapter', '... DONE', 'Runtime');
+		else {
+			$this->outNow('Bereinige Produk-Liste z.B. von TAE - Adapter', '... FAIL', 'Runtime');
+
+			return false;
+		}
+
+
+		// MAC - und Hardwaredaten ermitteln
+		$this->outNow('MAC - und Hardwaredaten ermitteln', 'START ...', 'Runtime');
+		if ($this->getHardwareEntrysByCoProducts())
+			$this->outNow('MAC - und Hardwaredaten ermitteln', '... DONE', 'Runtime');
+		else {
+			$this->outNow('MAC - und Hardwaredaten ermitteln', '... FAIL', 'Runtime');
+
+			return false;
+		}
+
+
+		// Lösche Export-Kunden die nicht DOCIS oder GENEXIS- Kunden sind
+		$this->outNow('Lösche Export-Kunden die nicht DOCIS oder GENEXIS- Kunden sind', 'START ...', 'Runtime');
+		if ($this->delUserNoDocsisOrArris())
+			$this->outNow('Lösche Export-Kunden die nicht DOCIS oder GENEXIS- Kunden sind', '... DONE', 'Runtime');
+		else {
+			$this->outNow('Lösche Export-Kunden die nicht DOCIS oder GENEXIS- Kunden sind', '... FAIL', 'Runtime');
+
+			return false;
+		}
+
+
+
+		// Ermittel Kunden GENEXIS oder DOCSIS
+		$this->outNow('Ermittel Kunden GENEXIS oder DOCSIS', 'START ...', 'Runtime');
+		if ($this->getGenexisOrDocsis())
+			$this->outNow('Ermittel Kunden GENEXIS oder DOCSIS', '... DONE', 'Runtime');
+		else {
+			$this->outNow('Ermittel Kunden GENEXIS oder DOCSIS', '... FAIL', 'Runtime');
+
+			return false;
+		}
+
+
+
+		// Erstes Daten Setzen / Füllen ... in Klasse OutData
+		$this->outNow('Erstes Daten Setzen', 'START ...', 'Runtime');
+		if ($this->custExpSetFillStepOne())
+			$this->outNow('Erstes Daten Setzen', '... DONE', 'Runtime');
+		else {
+			$this->outNow('Erstes Daten Setzen', '... FAIL', 'Runtime');
+
+			return false;
+		}
 
 
 
 //		// IDEBUG pre - tag
 		echo "<pre><hr>";
 		print_r($this->custArray);
+//		foreach ($this->custArray as $x)
+//			print_r($x->custExpSet);
 		echo "<hr></pre><br>";
 
 
@@ -261,6 +361,317 @@ abstract class CollectData extends Message
 		return true;
 
 	}    // END function initialCollectData()
+
+
+
+
+
+
+
+
+
+
+	// Ermittel Kunden GENEXIS oder DOCSIS
+	private function getGenexisOrDocsis()
+	{
+		$delCnt = '0';
+
+		// Duchlauf Customer - Handler
+		foreach($this->custArray as $customerIDFromObject => $curCustObj) {
+
+			// Aktuelle KundenNummer
+			$curCustomerID = $curCustObj->custExpSet['KUNDEN_NR'];
+
+
+			// Produkte
+			if ((!isset($curCustObj->custProductSet)) || (count($curCustObj->custProductSet) < 1))
+				return '';
+
+			$curType = 'unknown';
+
+			// Durchlauf Produkte
+			foreach($curCustObj->custProductSet as $curProductID => $productArray) {
+
+				if ((!isset($productArray['SR_RP_ID'])) || (strlen($productArray['SR_RP_ID']) < 1))
+					continue;
+
+				$curRP_ID = $productArray['SR_RP_ID'];
+
+				if (in_array($curRP_ID, $this->setModemType[$this->setMandant]['GENEXIS'])){
+					$curType = 'GENEXIS';
+					break;
+				}
+				elseif (in_array($curRP_ID, $this->setModemType[$this->setMandant]['DOCSIS'])){
+
+					$curType = 'DOCSIS';
+					break;
+				}
+				else
+					$curType = 'unknown';
+
+			}    // END // Durchlauf Produkte
+
+			// Wenn weder GENEXIS nocht DOCSIS lösche ich den Customer aus der Export - Liste
+			if ($curType == 'unknown'){
+				$delCnt++;
+				unset($this->custArray[$curCustomerID]);
+			}
+			else
+				$curCustObj->custModemType = $curType;
+
+
+		}    // END // Duchlauf Customer - Handler
+
+		// Wieviel Kunden haben wir jetzt noch?
+		$cntCustomerToExport = count($this->custArray);
+		if ($cntCustomerToExport <= 0)
+			$cntCustomerToExport = '0';
+
+		// Status:
+		$this->addMessage('&sum; Gelöschte Kunden weder Docis noch GENEXIS 2', '' . $delCnt . '', 'Info');
+		$this->addMessage('&sum; Gelöschte Kunden weder Docis noch GENEXIS 2', '' . $delCnt . '', 'Sum');
+		$this->addMessage('&sum; Exportfähige Kunden', $cntCustomerToExport, 'Sum');
+		$this->addMessage('&sum; Exportfähige Kunden', $cntCustomerToExport, 'Info');
+
+		return true;
+	}    // END private function getGenexisOrDocsis()
+
+
+
+
+
+
+
+
+
+
+	// Develop Methode ... zeigt Kunden die weder Docsis nocht GENEXIS sind!
+	private function delUserNoDocsisOrArris()
+	{
+
+		$unknown = array();
+
+		// Check welche RP_ID es noch gibt
+		foreach($this->custArray as $customerIDFromObject => $curCustObj) {
+
+			// Aktuelle KundenNummer
+			$curCustomerID = $curCustObj->custExpSet['KUNDEN_NR'];
+
+			if (isset($curCustObj->custProductSet)) {
+
+				foreach($curCustObj->custProductSet as $curProductID => $productArray) {
+
+					if ((isset($productArray['SR_RP_ID'])) && (strlen($productArray['SR_RP_ID']) > 0)) {
+
+						$curRP_ID = $productArray['SR_RP_ID'];    // Leichter zu handhaben
+
+						// Prüfe ob ich die RP_ID nicht kenne:
+						if ((!in_array($curRP_ID, $this->setModemType[$this->setMandant]['GENEXIS'])) && ((!in_array($curRP_ID, $this->setModemType[$this->setMandant]['DOCSIS'])))) {
+
+							$unknown[][$curRP_ID] = $curCustomerID;
+
+							unset($this->custArray[$curCustomerID]);
+						}
+
+					}
+
+				}
+
+			}
+
+		}
+
+		// Gelöschte CustomerNummern ausgeben?
+		if ((count($unknown) > 0) && ($this->showDeletedCustomerNumberByModemType)) {
+			print('Gelöschte KundenNummer die nicht ins Muster Docis oder GENEXIS passen (RP_ID=>CustomerID) :');
+			echo "<pre><br>";
+			print_r($unknown);
+			echo "<hr></pre><br>";
+		}
+
+		if (count($unknown) > 0) {
+			$delCnt = count($unknown);
+
+			// Wieviel Kunden haben wir jetzt noch?
+			$cntCustomerToExport = count($this->custArray);
+			if ($cntCustomerToExport <= 0)
+				$cntCustomerToExport = '0';
+
+			// Status:
+			$this->addMessage('&sum; Gelöschte Kunden weder Docis noch GENEXIS ', '' . $delCnt . '', 'Info');
+			$this->addMessage('&sum; Gelöschte Kunden weder Docis noch GENEXIS ', '' . $delCnt . '', 'Sum');
+			$this->addMessage('&sum; Exportfähige Kunden', $cntCustomerToExport, 'Sum');
+			$this->addMessage('&sum; Exportfähige Kunden', $cntCustomerToExport, 'Info');
+		}
+
+		return true;
+	}
+
+
+
+
+
+
+
+
+
+
+	// MAC - und Hardwaredaten ermitteln
+	private function getHardwareEntrysByCoProducts()
+	{
+
+		// Counter Var
+		$countHardware = '0';
+
+		// Duchlauf Customer - Handler
+		foreach($this->custArray as $customerIDFromObject => $curCustObj) {
+
+			// Aktuelle KundenNummer
+			$curCustomerID = $curCustObj->custExpSet['KUNDEN_NR'];
+
+
+			// Durchlauf Produkte des Kunden
+			foreach($curCustObj->custProductSet as $curProductID => $curProductArray) {
+
+				// Besitzt das aktuell Produkt keine SR_ID ... können wir die weitere Verarbeitung überspringen!
+				if ((!isset($curProductArray['SR_ID'])) || (strlen($curProductArray['SR_ID']) < 1))
+					continue;
+
+				// Ab hier wenn wir eine Hardware mit SR_ID gefunden haben ... also ein Modem
+				$curSR_ID = $curProductArray['SR_ID'];
+
+
+				$query = "SELECT sr.SR_ID	AS	SR_SR_ID,
+								 sr.RP_ID	AS  SR_RP_ID,
+								 sd.*
+							FROM SERVICE_RESOURCE_CONTENTS sr
+						LEFT JOIN SERVICE_DATA sd ON sd.SD_ID = sr.SD_ID
+							WHERE sr.SR_ID = '" . $curSR_ID . "'
+							AND sd.TECHNOLOGY_ID ='0'";
+
+				$result = ibase_query($this->dbF, $query);
+
+				while ($row = ibase_fetch_object($result)) {
+
+					$countHardware++;
+
+					$curCustObj->custProductSet[$curProductID]['SR_PARENT_ID'] = $row->PARENT_ID;
+					$curCustObj->custProductSet[$curProductID]['SR_DESCRIPTION'] = $row->DESCRIPTION;
+					$curCustObj->custProductSet[$curProductID]['SR_COMPONENT_ID'] = $row->COMPONENT_ID;
+					$curCustObj->custProductSet[$curProductID]['SR_TECHNOLOGY_ID'] = $row->TECHNOLOGY_ID;
+					$curCustObj->custProductSet[$curProductID]['SR_DATA_1'] = $row->DATA_1;
+					$curCustObj->custProductSet[$curProductID]['SR_DATA_2'] = $row->DATA_2;
+					$curCustObj->custProductSet[$curProductID]['SR_DATA_3'] = $row->DATA_3;
+					$curCustObj->custProductSet[$curProductID]['SR_DATA_4'] = $row->DATA_4;
+					$curCustObj->custProductSet[$curProductID]['SR_ROOT_ID'] = $row->ROOT_ID;
+					$curCustObj->custProductSet[$curProductID]['SR_RP_ID'] = $row->SR_RP_ID;
+
+				}    // END while
+
+				ibase_free_result($result);
+
+
+			}    // END // Durchlauf Produkte des Kunden
+
+		}    // END // Duchlauf Customer - Handler
+
+		$this->addMessage('&sum; Ermittelte Hardware (Router) -Einträge ', '' . $countHardware . '', 'Info');
+		$this->addMessage('&sum; Ermittelte Hardware (Router) -Einträge ', '' . $countHardware . '', 'Sum');
+
+		return true;
+
+	}    // END private function getHardwareEntrysByCoProducts()
+
+
+
+
+
+
+
+
+
+
+	// Bereinige Produk-Liste z.B. von TAE - Adapter
+	private function cleanProductVars()
+	{
+
+		// Wenn wir nicht zu bereinigen haben (für diesen Mandanten), können wir die Methode schon verlassen.
+		if ((!isset($this->setDelProduct[$this->setMandant])) || (count($this->setDelProduct[$this->setMandant]) < 1))
+			return true;
+
+		// Duchlauf Customer - Handler
+		foreach($this->custArray as $customerIDFromObject => $curCustObj) {
+
+			// Aktuelle KundenNummer
+			$curCustomerID = $curCustObj->custExpSet['KUNDEN_NR'];
+
+
+			// Durchlauf custProductSet des Kunden
+			foreach($curCustObj->custProductSet as $curProduct_ID => $curProductPArray) {
+
+				// Prüfen ob wir ein zu löschendes Produkt haben
+				if (in_array($curProduct_ID, $this->setDelProduct[$this->setMandant])) {
+
+					// TODO ACHTUNG hier lösche ich das TAE Modul!!!
+					unset($curCustObj->custProductSet[$curProduct_ID]);
+				}
+
+			}    // END // Durchlauf custProductSet des Kunden
+
+		}    // END // Duchlauf Customer - Handler
+
+		return true;
+
+	}    // END private function cleanModemToOneModem()
+
+
+
+
+
+
+
+
+
+
+	// Bereinige Cisco Kabelmodem und Arris Kabelmodem zugunsten von Arris
+	private function cleanResetProductVars()
+	{
+
+		// Wenn wir nicht zu bereinigen haben (für diesen Mandanten), können wir die Methode schon verlassen.
+		if ((!isset($this->setClearProduct[$this->setMandant])) || (count($this->setClearProduct[$this->setMandant]) < 1))
+			return true;
+
+		// Duchlauf Customer - Handler
+		foreach($this->custArray as $customerIDFromObject => $curCustObj) {
+
+			// Aktuelle KundenNummer
+			$curCustomerID = $curCustObj->custExpSet['KUNDEN_NR'];
+
+
+			// Durchlauf custProductSet des Kunden
+			foreach($curCustObj->custProductSet as $curProduct_ID => $curProductPArray) {
+
+				// Prüfen ob wir ein zu löschendes Produkt haben
+				if (array_key_exists($curProduct_ID, $this->setClearProduct[$this->setMandant])) {
+
+					// Die zu erstzende bzw. die ProduktID ermitteln die ebenfalls vorhanden sein muss
+					$needProductID = $this->setClearProduct[$this->setMandant][$curProduct_ID];
+
+					if (isset($curCustObj->custProductSet[$needProductID])) {
+
+						// TODO ACHTUNG hier lösche ich das Cisco-Modem!!!
+						unset($curCustObj->custProductSet[$curProduct_ID]);
+					}
+
+				}
+
+			}    // END // Durchlauf custProductSet des Kunden
+
+		}    // END // Duchlauf Customer - Handler
+
+		return true;
+
+	}    // END private function cleanModemToOneModem()
 
 
 
@@ -284,30 +695,33 @@ abstract class CollectData extends Message
 			// Aktuelle KundenNummer
 			$curCustomerID = $curCustObj->custExpSet['KUNDEN_NR'];
 
+			$cntVOIPPerCustomer = '0';
+
 			// Durchlauf VOIP-Daten des Kunden
 			foreach($curCustObj->custVOIPSet as $curCOV_ID => $curVOIPArray) {
 
 				// Wenn Tel-Eintrag == J ... foreach custSubIDSet
 				// Soll laut VOIP-Daten ein Telefonbucheintrag gesetzt werden?
 
-				if ($curVOIPArray['TELEFONBUCHEINTRAG'] == 'J')
-					echo "hier $curCustomerID<br>";
-
-				if ( ($curVOIPArray['TELEFONBUCHEINTRAG'] == 'J') && (isset($curCustObj->custVOIPSet[$curCOV_ID]['TELEFONBUCH_UMFANG'])) ){	// LIVE
+				if (($curVOIPArray['TELEFONBUCHEINTRAG'] == 'J') && (isset($curCustObj->custVOIPSet[$curCOV_ID]['TELEFONBUCH_UMFANG']))) {    // LIVE
 					// if ($curVOIPArray['TELEFONBUCHEINTRAG'] == 'N') {    // DEVELOP
 					// Lauf VOIP J ... jetzt prüfen ob das bei den Sub-IDs (Telefonnummern auch der Fall ist:
 
-					if (isset($curCustObj->custSubIDPSet)) {
+					if (isset($curCustObj->custSubIDSet)) {
+
+						$cntSubID = 0;
 
 						// Durchlauf Subscriber SubID (Telefonnumern)
-						foreach($curCustObj->custSubIDPSet as $curSub_ID => $curSubArray) {
+						foreach($curCustObj->custSubIDSet as $curSub_ID => $curSubArray) {
+
+							$cntSubID++;
 
 							// Wenn bei SubID auch der Telefonbucheintrag gesetzt werden soll... dann haben wir bei beiden Settings ja!
-							if ($curSubArray['TELEFONBUCHEINTRAG'] == 'J'){	//  LIVE
+							if ($curSubArray['TELEFONBUCHEINTRAG'] == 'J') {    //  LIVE
 								// if ($curSubArray['TELEFONBUCHEINTRAG'] == 'N') {    // DEVELOP
 								// Ja, Diese Telefonnummer soll einen Telefonbucheintrag erhalten
 
-								$phoneBookEntryType = $curCustObj->custVOIPSet[$curCOV_ID]['TELEFONBUCH_UMFANG'];	// LIVE
+								$phoneBookEntryType = $curCustObj->custVOIPSet[$curCOV_ID]['TELEFONBUCH_UMFANG'];    // LIVE
 								// $phoneBookEntryType = 'V';    // DEVELOP
 
 								$retArray = $this->getAddressPhoneBoockByCustomerIDAndTypeID($curCustomerID, $phoneBookEntryType);
@@ -315,18 +729,27 @@ abstract class CollectData extends Message
 								if (count($retArray) > 0) {
 
 									$cntSumPhoneBookEntry++;
+									$cntVOIPPerCustomer++;
 
-									$curCustObj->custSubIDPSet[$curSub_ID]['TELEBUCH_TEL'] = $curCustObj->custSubIDPSet[$curSub_ID]['VOIP_NATIONAL_VORWAHL_1'] . '/' . $curCustObj->custSubIDPSet[$curSub_ID]['VOIP_KOPFNUMMER_1'];
+									//$curVOIP_NATIONAL_VORWAHL = 'VOIP_NATIONAL_VORWAHL_' . $cntVOIPPerCustomer;
+									$curVOIP_NATIONAL_VORWAHL = 'VOIP_NATIONAL_VORWAHL_' . $cntSubID;
+									//$curVOIP_KOPFNUMMER = 'VOIP_KOPFNUMMER_' . $cntVOIPPerCustomer;
+									$curVOIP_KOPFNUMMER = 'VOIP_KOPFNUMMER_' . $cntSubID;
 
+									//echo "$curSub_ID -> $cntSubID -> $curVOIP_NATIONAL_VORWAHL<br>";
+
+									$curCustObj->custSubIDSet[$curSub_ID]['TELEBUCH_TEL'] = $curCustObj->custSubIDSet[$curSub_ID][$curVOIP_NATIONAL_VORWAHL] . '/' . $curCustObj->custSubIDSet[$curSub_ID][$curVOIP_KOPFNUMMER];
+
+									// Telefonbuch - Daten hinzufügen
 									foreach($retArray as $keyName => $value) {
-										$curCustObj->custSubIDPSet[$curSub_ID][$keyName] = $value;
+										$curCustObj->custSubIDSet[$curSub_ID][$keyName] = $value;
 									}
 
 								}
 							}
 							else {
 								// Nein, Diese Telefonnummer soll keinen Telefonbucheintrag erhalten
-								$curCustObj->custSubIDPSet[$curSub_ID]['TELEFONBUCHEINTRAG'] = 'N';
+								$curCustObj->custSubIDSet[$curSub_ID]['TELEFONBUCHEINTRAG'] = 'N';
 							}
 
 						}    // END // Durchlauf Subscriber SubID (Telefonnumern)
@@ -340,8 +763,8 @@ abstract class CollectData extends Message
 
 		}    // END // Duchlauf Customer - Handler
 
-		$this->addMessage('&sum; Ermittelt Telefonbuch-Einträge ', ''.$cntSumPhoneBookEntry.'', 'Info');
-		$this->addMessage('&sum; Ermittelt Telefonbuch-Einträge ', ''.$cntSumPhoneBookEntry.'', 'Sum');
+		$this->addMessage('&sum; Ermittelt Telefonbuch-Einträge ', '' . $cntSumPhoneBookEntry . '', 'Info');
+		$this->addMessage('&sum; Ermittelt Telefonbuch-Einträge ', '' . $cntSumPhoneBookEntry . '', 'Sum');
 
 		return true;
 
@@ -383,11 +806,11 @@ abstract class CollectData extends Message
 					$cntSubIDData++;
 					$cntInnerSubscriber++;
 
-					$curCustObj->custSubIDPSet[$row->SUBS_ID]['COV_ID'] = $curCOV_ID;
-					$curCustObj->custSubIDPSet[$row->SUBS_ID]['SUBS_ID'] = $row->SUBS_ID;
+					$curCustObj->custSubIDSet[$row->SUBS_ID]['SUBS_ID'] = $row->SUBS_ID;
+					$curCustObj->custSubIDSet[$row->SUBS_ID]['COV_ID'] = $curCOV_ID;
 
-					$curCustObj->custSubIDPSet[$row->SUBS_ID]['SUBSCRIBER_ID'] = $row->SUBSCRIBER_ID;    // (Telefonnummer)
-					$curCustObj->custSubIDPSet[$row->SUBS_ID]['VOIP_PORT_TERMIN'] = $this->getFormatDate($row->DATE_PORTI_REQ);
+					$curCustObj->custSubIDSet[$row->SUBS_ID]['SUBSCRIBER_ID'] = $row->SUBSCRIBER_ID;    // (Telefonnummer)
+					$curCustObj->custSubIDSet[$row->SUBS_ID]['VOIP_PORT_TERMIN'] = $this->getFormatDate($row->DATE_PORTI_REQ);
 
 					// Carrier?
 					if ($row->CARRIER_ID > 0) {
@@ -395,53 +818,53 @@ abstract class CollectData extends Message
 						$curCarrierID = $this->globalCarrierData['CARRIER'][$row->CARRIER_ID]['CARRIER_ID'];
 						$curCarrierName = $this->globalCarrierData['CARRIER'][$row->CARRIER_ID]['CARRIER_NAME'];
 
-						$curCustObj->custSubIDPSet[$row->SUBS_ID]['CARRIER_ID'] = $curCarrierID;
-						$curCustObj->custSubIDPSet[$row->SUBS_ID]['CARRIER_CODE'] = $curCarrierCode;
-						$curCustObj->custSubIDPSet[$row->SUBS_ID]['CARRIER_NAME'] = $curCarrierName;
+						$curCustObj->custSubIDSet[$row->SUBS_ID]['CARRIER_ID'] = $curCarrierID;
+						$curCustObj->custSubIDSet[$row->SUBS_ID]['CARRIER_CODE'] = $curCarrierCode;
+						$curCustObj->custSubIDSet[$row->SUBS_ID]['CARRIER_NAME'] = $curCarrierName;
 					}
 
 
 					// Telefonbuch-Eintrag für diese Nummer?
 					if ($row->PHON_BOOK == '1')
-						$curCustObj->custSubIDPSet[$row->SUBS_ID]['TELEFONBUCHEINTRAG'] = 'J';
+						$curCustObj->custSubIDSet[$row->SUBS_ID]['TELEFONBUCHEINTRAG'] = 'J';
 					else
-						$curCustObj->custSubIDPSet[$row->SUBS_ID]['TELEFONBUCHEINTRAG'] = 'N';
+						$curCustObj->custSubIDSet[$row->SUBS_ID]['TELEFONBUCHEINTRAG'] = 'N';
 
 
 					// Telefonnummer inversuche sperren?
 					if ($row->INVERS_SEARCH == '1')
-						$curCustObj->custSubIDPSet[$row->SUBS_ID]['TELEBUCH_SPERRE_INVERS'] = 'N';
+						$curCustObj->custSubIDSet[$row->SUBS_ID]['TELEBUCH_SPERRE_INVERS'] = 'N';
 					else
-						$curCustObj->custSubIDPSet[$row->SUBS_ID]['TELEBUCH_SPERRE_INVERS'] = 'J';
+						$curCustObj->custSubIDSet[$row->SUBS_ID]['TELEBUCH_SPERRE_INVERS'] = 'J';
 
 
 					// Elektr.Telefonbuch?
 					if ($row->DIGITAL_MEDIA == '1')
-						$curCustObj->custSubIDPSet[$row->SUBS_ID]['TELEBUCH_EINTRAG_ELEKT'] = 'J';
+						$curCustObj->custSubIDSet[$row->SUBS_ID]['TELEBUCH_EINTRAG_ELEKT'] = 'J';
 					else
-						$curCustObj->custSubIDPSet[$row->SUBS_ID]['TELEBUCH_EINTRAG_ELEKT'] = 'N';
+						$curCustObj->custSubIDSet[$row->SUBS_ID]['TELEBUCH_EINTRAG_ELEKT'] = 'N';
 
 
 					// SIP Authname
 					$curVOIP_ACCOUNT = 'VOIP_ACCOUNT_' . $cntInnerSubscriber;
-					$curCustObj->custSubIDPSet[$row->SUBS_ID][$curVOIP_ACCOUNT] = $row->SIP_AUTHNAME;
+					$curCustObj->custSubIDSet[$row->SUBS_ID][$curVOIP_ACCOUNT] = $row->SIP_AUTHNAME;
 
 
 					// SIP Passwort
 					$curVOIP_ACCOUNT_PASSWORT = 'VOIP_ACCOUNT_PASSWORT_' . $cntInnerSubscriber;
-					$curCustObj->custSubIDPSet[$row->SUBS_ID][$curVOIP_ACCOUNT_PASSWORT] = $row->SIP_PASSWORD;
+					$curCustObj->custSubIDSet[$row->SUBS_ID][$curVOIP_ACCOUNT_PASSWORT] = $row->SIP_PASSWORD;
 
 
 					// Vorwahl
 					$curVOIP_NATIONAL_VORWAHL = 'VOIP_NATIONAL_VORWAHL_' . $cntInnerSubscriber;
 					$val = $this->getNatVorwahl($row->SUBSCRIBER_ID);
-					$curCustObj->custSubIDPSet[$row->SUBS_ID][$curVOIP_NATIONAL_VORWAHL] = $val;
+					$curCustObj->custSubIDSet[$row->SUBS_ID][$curVOIP_NATIONAL_VORWAHL] = $val;
 
 
 					// Kopfnummer
 					$curVOIP_KOPFNUMMER = 'VOIP_KOPFNUMMER_' . $cntInnerSubscriber;
 					$val = $this->getKopfnummer($row->SUBSCRIBER_ID);
-					$curCustObj->custSubIDPSet[$row->SUBS_ID][$curVOIP_KOPFNUMMER] = $val;
+					$curCustObj->custSubIDSet[$row->SUBS_ID][$curVOIP_KOPFNUMMER] = $val;
 
 				}    // END while
 
@@ -507,8 +930,8 @@ abstract class CollectData extends Message
 
 					$cntVOIPData++;
 
-					$curCustObj->custVOIPSet[$row->COV_ID]['CONTRACT_ID'] = $curContractID;
 					$curCustObj->custVOIPSet[$row->COV_ID]['COV_ID'] = $row->COV_ID;
+					$curCustObj->custVOIPSet[$row->COV_ID]['CONTRACT_ID'] = $curContractID;
 
 
 					// EGN_VERFREMDUNG?
@@ -624,9 +1047,9 @@ abstract class CollectData extends Message
 
 					$cntProducts++;
 
+					$curCustObj->custProductSet[$row->PRODUCT_ID]['PRODUCT_ID'] = $row->PRODUCT_ID;
 					$curCustObj->custProductSet[$row->PRODUCT_ID]['CONTRACT_ID'] = $curContractID;
 
-					$curCustObj->custProductSet[$row->PRODUCT_ID]['PRODUCT_ID'] = $row->PRODUCT_ID;
 					$curCustObj->custProductSet[$row->PRODUCT_ID]['PRODUCT_NAME'] = $row->DESCRIPTION;
 
 					$curCustObj->custProductSet[$row->PRODUCT_ID]['COPDATE_ACTIVE'] = $row->COPDATE_ACTIVE;
@@ -751,6 +1174,7 @@ abstract class CollectData extends Message
 
 				// Coding Export - Daten für Verträge
 				$curCustObj->custContractSet[$row->CO_ID]['CONTRACT_ID'] = $row->CO_ID;
+				$curCustObj->custContractSet[$row->CO_ID]['CUSTOMER_ID'] = $row->CUSTOMER_ID;
 				$curCustObj->custContractSet[$row->CO_ID]['CONTR_STATUS_ID'] = $row->STATUS_ID;
 				$curCustObj->custContractSet[$row->CO_ID]['CONTR_DATE_ACTIVE_REQ'] = $this->getFormatDate($row->DATE_ACTIVE_REQ);
 
@@ -760,6 +1184,9 @@ abstract class CollectData extends Message
 				$curCustObj->custContractSet[$row->CO_ID]['GUELTIG_BIS'] = $this->getFormatDate($row->DATE_DEACTIVE);
 				$curCustObj->custContractSet[$row->CO_ID]['ERFASST_AM'] = $this->getFormatDate($row->DATE_CREATED);
 				$curCustObj->custContractSet[$row->CO_ID]['UNTERZEICHNET_AM'] = $this->getFormatDate($row->DATE_SIGNED);
+
+				$curCustObj->custContractSet[$row->CO_ID]['WIDERRUFEN_AM'] = '';
+				$curCustObj->custContractSet[$row->CO_ID]['GEKUENDIGT_AM'] = '';
 			}
 
 			ibase_free_result($result);
@@ -1120,7 +1547,7 @@ abstract class CollectData extends Message
 
 
 	// Datenbankverbindung zum Dimari-System aufbauen
-	function createDimariDBConnection()
+	public function createDimariDBConnection()
 	{
 
 		// Muss neue DB - Verbindung hergestellt werden?

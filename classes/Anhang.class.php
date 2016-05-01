@@ -31,6 +31,21 @@ class Anhang
 	);
 
 
+	// Zuweisung Produkt_ID zu neuer Produkt ID
+	public $productIDTo_DOCSIS = array('10026'    => '833',        // fiberFON
+										'10027'    => '834',        // fiberWEB
+										'together' => '835'         // Zusammen
+	);
+
+	// Zuweisung Produkt_ID zu neuer Produkt ID
+	public $productIDTo_GENEXIS = array('10026'    => '810',       // fiberFON
+										 '10027'    => '832',       // fiberWEB
+										 '10044'    => '832',       // fiberWEB
+										 'together' => '830',       // Zusammen
+										 '10025'    => '831'        // + TV
+	);
+
+
 	// Anhang - Option:
 	// Format: ProduktID => OotionID => OptionBezeichnung
 	private $productIDtoOptionIDtoDesc = array('770' => array('7'  => 'NOCGN',
