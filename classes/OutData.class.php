@@ -35,7 +35,164 @@ class OutData extends CollectData
 			exit;
 		$this->showStatus();
 
+
+		// Starte DatenExport (Datei-erstellen):
+		if (!$this->writeToExcel())
+			exit;
+		$this->showStatus();
+
+
 	}    // END function initialOutDataFullHandling()
+
+
+
+
+
+
+	public function writeToExcel()
+	{
+
+		$excel = $this->writeToExcelHeadline();
+
+
+		// Duchlauf Customer - Handler
+		foreach($this->custArray as $customerIDFromObject => $curCustObj) {
+
+			// Aktuelle KundenNummer
+			$curCustomerID = $curCustObj->custExpSet['KUNDEN_NR'];
+
+			// Aktuelle Customer-Klassen-Objekt zuweisen ... Grund: einfachere weitere Bearbeitung im Code
+			$curCustomerObj = $this->custArray[$curCustomerID];
+
+			// echo "Zeile: " . $cntRow . "<br>";
+
+			$leadingPipe = false;
+
+			foreach($curCustomerObj->custExpSet as $fieldname => $value) {
+
+				//echo "Feldname: " . $fieldname . " => Value: " . $value . "<br>";
+
+				// Trennzeichen setzen?
+				if ($leadingPipe)
+					$excel .= ';';
+
+				$excel .= '"' . utf8_encode(trim($value)) . '"';
+
+				// Ab jetzt Trennzeichen setzen!
+				$leadingPipe = true;
+
+			}
+
+			$excel .= "\r\n";
+
+		}
+
+
+//        echo "<br><hr>";
+//        echo "<pre>";
+//        print_r($excel);
+//        echo "</pre><br>";
+
+		// Datei schreiben:
+		$curFilename = $this->writeFile($this->setExportType, $excel);
+
+		return true;
+	}
+
+
+
+	public function writeToExcelHeadline()
+	{
+
+		$excel = '';
+
+		// Duchlauf Customer - Handler
+		foreach($this->custArray as $customerIDFromObject => $curCustObj) {
+
+			// Aktuelle KundenNummer
+			$curCustomerID = $curCustObj->custExpSet['KUNDEN_NR'];
+
+			// Aktuelle Customer-Klassen-Objekt zuweisen ... Grund: einfachere weitere Bearbeitung im Code
+			$curCustomerObj = $this->custArray[$curCustomerID];
+
+			// Prüfung auf custExpSet
+			if ((!isset($curCustomerObj->custExpSet)) || (count($curCustomerObj->custExpSet) < 1))
+				return false;
+
+			$leadingPipe = false;
+
+			foreach($curCustomerObj->custExpSet as $fieldname => $value) {
+
+				// echo "Feldname: " . $fieldname . " => Value: " . $value . "<br>";
+
+				// Trennzeichen setzen?
+				if ($leadingPipe)
+					$excel .= ';';
+
+				$excel .= '"' . utf8_encode(trim($fieldname)) . '"';
+
+				// Ab jetzt Trennzeichen setzen!
+				$leadingPipe = true;
+
+			}
+
+			$excel .= "\r\n";
+
+			break;
+
+		}	// END // Duchlauf Customer - Handler
+
+		return $excel;
+
+	}
+
+
+
+
+
+	// Schreibt die Export Datei mit Format Version und Datum
+	private function writeFile($type, $content, $filename = false)
+	{
+
+		if (!$filename)
+			$filename = 'DimariDiensteExp_' . $type . '_' . 'V001_' . date('Ymd');
+
+		// '/var/www/html/www/uploads/';
+		$fullFilePathAndName = 'uploads/exports/' . $filename . '.csv';
+
+
+		// Existiert Datei schon? ... wenn ja, Version erhöhen
+		if (file_exists($fullFilePathAndName)) {
+
+			// Versionsnummer ermitteln
+			preg_match('/(_V(\d+))/', $filename, $matches);
+			$fileVersion = $matches[2];
+
+			$nextVersion = $fileVersion + 1;
+			$nextVersion = sprintf("%'.03d", $nextVersion);
+
+			$filename = 'DimariDiensteExp_' . $type . '_V' . $nextVersion . '_' . date('Ymd');
+
+			// Für die Info-Ausgabe
+			$this->globalLastFilename = $filename;
+
+			// Selbstaufruf ... endet wenn freie Versionsnummer gefunden wurde
+			$this->writeFile($type, $content, $filename);
+		}
+		else {
+			// Für die Info-Ausgabe
+			$this->globalLastFilename = $filename;
+
+			if ($this->setNoFileCreation != 'yes') {
+				$fp = fopen($fullFilePathAndName, 'w');
+				fwrite($fp, $content);
+				fclose($fp);
+			}
+		}
+
+		return true;
+
+	}    // END public function writeFile($type, $content, $filename=false)
 
 
 
@@ -219,7 +376,7 @@ class OutData extends CollectData
 				$boolGotWeb = true;
 
 			// Speedupgrade?
-			if ( ($curProductID == '10072') || ($curProductID == '10028') )
+			if (($curProductID == '10072') || ($curProductID == '10028'))
 				$curBandbreite = '200/20';
 
 		}    // END // Durchlauf Produkte

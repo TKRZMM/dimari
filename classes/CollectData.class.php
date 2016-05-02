@@ -18,6 +18,9 @@ abstract class CollectData extends Message
 	// Export Typ: FTTC oder FTTH
 	public $setExportType = 'FTTH';
 
+	// Keine Export - Datei schreiben? (default no = Datei wird erzeugt)
+	public $setNoFileCreation = 'no';
+
 
 	// Telephonbuch ID Referenz
 	// Bei TKRZ: 0 = Kein Eintrag
@@ -44,6 +47,7 @@ abstract class CollectData extends Message
 	// 20010272 ... GENEXIS Kunde
 	// 20010043 ... Weder GENEXIS noch Arris
 	// 20010296 ... GENEXIS + TV
+	// 20010398 ... GENEXIS Bridge Daten gesetzt + Grundgebühr Energiekunde = 5 Euro Rabatt
 
 
 	// Wie viele Customer sollen eingelesen werden?
@@ -82,7 +86,8 @@ abstract class CollectData extends Message
 	private $setReadOnlyContractStatusAboveNull = false;
 
 	// VOIPsatus muss grösser Null sein? (bool var)	(DEFAULT true)
-	private $setReadOnlyVOIPStatusAboveNull = true;
+	//private $setReadOnlyVOIPStatusAboveNull = true;
+	private $setReadOnlyVOIPStatusAboveNull = false;
 
 	// Sollen nur unterzeichnete Verträge ermittelt werden? (bool var)
 	// Abschnitt nicht programmiert!!!
@@ -92,7 +97,8 @@ abstract class CollectData extends Message
 	// Wenn Produkt ID a und Produkt ID b ... dann lösche a und behalte b
 	// Format: Kennung Mandant => a => b
 	public $setClearProduct = array('XYZ'  => array('1' => '2'),
-									'TKRZ' => array('10035' => '10064')
+									'TKRZ' => array('10035' => '10064',
+													'10042' => '10043')
 	);
 
 
@@ -136,7 +142,7 @@ abstract class CollectData extends Message
 	public $globalCarrierData = array();
 
 
-
+	public $globalLastFilename = ''; // Erzeugte Datei
 
 
 
@@ -348,13 +354,20 @@ abstract class CollectData extends Message
 		}
 
 
-
-//		// IDEBUG pre - tag
-		echo "<pre><hr>";
-//		print_r($this->custArray);
+		// Debug - Ausgabe erzwingen wenn nur ein Kunde gesucht wird
+		if (strlen($this->setOnlyExampleCustomerID)>0){
+			echo "<pre><hr>";
+			print_r($this->custArray);
 //		foreach ($this->custArray as $x)
 //			print_r($x->custExpSet);
-		echo "<hr></pre><br>";
+			echo "<hr></pre><br>";
+		}
+		else{
+//			echo "<pre><hr>";
+//			print_r($this->custArray);
+//			echo "<hr></pre><br>";
+		}
+
 
 
 		// Info Datenerfassung start
