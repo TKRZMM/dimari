@@ -8,42 +8,16 @@
 
 
 
-$excel = 'hallo markus';
-writeFile('FTTC', $excel);
+$data = 'Port 11';
+$data = 'Port05';
+$search = '/(\d+)/';
+$val = $match[1];
 
-
-function writeFile($type, $content, $filename = false)
-{
-
-	if (!$filename)
-		$filename = 'test_' . $type . '_' . 'V001_' . date('Ymd');
-
-	// '/var/www/html/www/uploads/';
-	$fullFilePathAndName = 'uploads/' . $filename . '.csv';
-
-
-	// Existiert Datei schon? ... wenn ja, Version erhöhen
-	if (file_exists($fullFilePathAndName)) {
-
-		// Versionsnummer ermitteln
-		preg_match('/(_V(\d+))/', $filename, $matches);
-		$fileVersion = $matches[2];
-
-		$nextVersion = $fileVersion + 1;
-		$nextVersion = sprintf("%'.03d", $nextVersion);
-
-		$filename = 'test_' . $type . '_V' . $nextVersion . '_' . date('Ymd');
-
-		// Selbstaufruf ... endet wenn freie Versionsnummer gefunden wurde
-		writeFile($type, $content, $filename);
-	} else {
-		$fp = fopen($fullFilePathAndName, 'w');
-		fwrite($fp, $content);
-		fclose($fp);
-	}
-
-}
-
+preg_match($search, $data, $match);
+// IDEBUG pre - tag
+echo "<pre><hr>";
+print_r($match);
+echo "<hr></pre><br>";
 
 
 

@@ -49,156 +49,6 @@ class OutData extends CollectData
 
 
 
-	public function writeToExcel()
-	{
-
-		$excel = $this->writeToExcelHeadline();
-
-
-		// Duchlauf Customer - Handler
-		foreach($this->custArray as $customerIDFromObject => $curCustObj) {
-
-			// Aktuelle KundenNummer
-			$curCustomerID = $curCustObj->custExpSet['KUNDEN_NR'];
-
-			// Aktuelle Customer-Klassen-Objekt zuweisen ... Grund: einfachere weitere Bearbeitung im Code
-			$curCustomerObj = $this->custArray[$curCustomerID];
-
-			// echo "Zeile: " . $cntRow . "<br>";
-
-			$leadingPipe = false;
-
-			foreach($curCustomerObj->custExpSet as $fieldname => $value) {
-
-				//echo "Feldname: " . $fieldname . " => Value: " . $value . "<br>";
-
-				// Trennzeichen setzen?
-				if ($leadingPipe)
-					$excel .= ';';
-
-				$excel .= '"' . utf8_encode(trim($value)) . '"';
-
-				// Ab jetzt Trennzeichen setzen!
-				$leadingPipe = true;
-
-			}
-
-			$excel .= "\r\n";
-
-		}
-
-
-//        echo "<br><hr>";
-//        echo "<pre>";
-//        print_r($excel);
-//        echo "</pre><br>";
-
-		// Datei schreiben:
-		$curFilename = $this->writeFile($this->setExportType, $excel);
-
-		return true;
-	}
-
-
-
-	public function writeToExcelHeadline()
-	{
-
-		$excel = '';
-
-		// Duchlauf Customer - Handler
-		foreach($this->custArray as $customerIDFromObject => $curCustObj) {
-
-			// Aktuelle KundenNummer
-			$curCustomerID = $curCustObj->custExpSet['KUNDEN_NR'];
-
-			// Aktuelle Customer-Klassen-Objekt zuweisen ... Grund: einfachere weitere Bearbeitung im Code
-			$curCustomerObj = $this->custArray[$curCustomerID];
-
-			// Prüfung auf custExpSet
-			if ((!isset($curCustomerObj->custExpSet)) || (count($curCustomerObj->custExpSet) < 1))
-				return false;
-
-			$leadingPipe = false;
-
-			foreach($curCustomerObj->custExpSet as $fieldname => $value) {
-
-				// echo "Feldname: " . $fieldname . " => Value: " . $value . "<br>";
-
-				// Trennzeichen setzen?
-				if ($leadingPipe)
-					$excel .= ';';
-
-				$excel .= '"' . utf8_encode(trim($fieldname)) . '"';
-
-				// Ab jetzt Trennzeichen setzen!
-				$leadingPipe = true;
-
-			}
-
-			$excel .= "\r\n";
-
-			break;
-
-		}	// END // Duchlauf Customer - Handler
-
-		return $excel;
-
-	}
-
-
-
-
-
-	// Schreibt die Export Datei mit Format Version und Datum
-	private function writeFile($type, $content, $filename = false)
-	{
-
-		if (!$filename)
-			$filename = 'DimariDiensteExp_' . $type . '_' . 'V001_' . date('Ymd');
-
-		// '/var/www/html/www/uploads/';
-		$fullFilePathAndName = 'uploads/exports/' . $filename . '.csv';
-
-
-		// Existiert Datei schon? ... wenn ja, Version erhöhen
-		if (file_exists($fullFilePathAndName)) {
-
-			// Versionsnummer ermitteln
-			preg_match('/(_V(\d+))/', $filename, $matches);
-			$fileVersion = $matches[2];
-
-			$nextVersion = $fileVersion + 1;
-			$nextVersion = sprintf("%'.03d", $nextVersion);
-
-			$filename = 'DimariDiensteExp_' . $type . '_V' . $nextVersion . '_' . date('Ymd');
-
-			// Für die Info-Ausgabe
-			$this->globalLastFilename = $filename;
-
-			// Selbstaufruf ... endet wenn freie Versionsnummer gefunden wurde
-			$this->writeFile($type, $content, $filename);
-		}
-		else {
-			// Für die Info-Ausgabe
-			$this->globalLastFilename = $filename;
-
-			if ($this->setNoFileCreation != 'yes') {
-				$fp = fopen($fullFilePathAndName, 'w');
-				fwrite($fp, $content);
-				fclose($fp);
-			}
-		}
-
-		return true;
-
-	}    // END public function writeFile($type, $content, $filename=false)
-
-
-
-
-
-
 
 
 
@@ -229,9 +79,11 @@ class OutData extends CollectData
 			$curCustObj->custExpSet['ROUTER_SERIEN_NR'] = $getRouterDataArray['ROUTER_SERIEN_NR'];
 			$curCustObj->custExpSet['ACS_ID'] = '';
 			$curCustObj->custExpSet['EXT_PRODUKT_ID'] = $getDienstDataArray['EXT_PRODUKT_ID'];
-//			$curCustObj->custExpSet['OPTION_1'] = '';
-//			$curCustObj->custExpSet['OPTION_2'] = '';                  // 15
-//			$curCustObj->custExpSet['OPTION_3'] = '';
+
+			$getOptionDataArray = $this->getOptionsByCustomerID($curCustomerID);
+			$curCustObj->custExpSet['OPTION_1'] = $getOptionDataArray['OPTION_1'];
+			$curCustObj->custExpSet['OPTION_2'] = $getOptionDataArray['OPTION_2'];                  // 15
+			$curCustObj->custExpSet['OPTION_3'] = $getOptionDataArray['OPTION_3'];
 
 			$getContractDataArray = $this->handleContractsByCustomerID($curCustomerID);
 			$curCustObj->custExpSet['GUELTIG_VON'] = $getContractDataArray['GUELTIG_VON'];
@@ -336,11 +188,97 @@ class OutData extends CollectData
 
 			$getBandbreiteDataArray = $this->getBandbreiteByCustomerID($curCustomerID);
 			$curCustObj->custExpSet['BANDBREITE'] = $getBandbreiteDataArray['BANDBREITE'];
+			$curCustObj->custExpSet['MANDANT_ID'] = $this->setMandantID;
 
 		}
 
 		return true;
 	}
+
+
+
+
+
+
+
+
+
+
+	private function getOptionsByCustomerID($curCustomerID)
+	{
+
+		$return = array('OPTION_1' => '',
+						'OPTION_2' => '',
+						'OPTION_3' => '',
+		);
+
+		// Anhang - Klassen Objekt erzeugen
+		$hAnhang = new Anhang();
+
+		// Aktuelle Customer-Klassen-Objekt zuweisen ... Grund: einfachere weitere Bearbeitung im Code
+		$curCustomerObj = $this->custArray[$curCustomerID];
+
+		// Wenn keine extern-Produkt-ID (also neu Produkt-ID gesetzt ist... dann Methode verlassen)
+		if ((!isset($curCustomerObj->custExpSet['EXT_PRODUKT_ID'])) || (strlen($curCustomerObj->custExpSet['EXT_PRODUKT_ID']) < 1))
+			return $return;
+
+		// Externe ProduktID des Kunden ermitteln
+		$curExtProdID = $curCustomerObj->custExpSet['EXT_PRODUKT_ID'];
+
+
+		// Prüfung auf custProductSet
+		if ((!isset($curCustomerObj->custProductSet)) || (count($curCustomerObj->custProductSet) < 1))
+			return $return;
+
+		$optionCnt = 0;
+
+		// Durchlauf Produkte
+		foreach($curCustomerObj->custProductSet as $curProductID => $productArray) {
+
+			$nKey = '';
+
+			// Aktuell ProduktID in der Options gesetzt?
+			if (!key_exists($curProductID, $hAnhang->productOptions[$this->setMandantID]))
+				continue;
+
+			// Ja es gibt eine Option für das aktuelle Produkt ... Inhalt sprich Schlüssel ermitteln
+			$getValKey = $hAnhang->productOptions[$this->setMandantID][$curProductID];
+
+
+			// Suche den passenden Key
+			$nKey = array_search($getValKey, $hAnhang->productIDtoOptionIDtoDesc[$curExtProdID]);
+
+//			echo "Cnt: $optionCnt nKey: $nKey key: $curExtProdID " . " Val: " . $getValKey . "<br>";
+
+			// Option zuweisen
+			if (strlen($nKey) > 0) {
+
+				$optionCnt++;
+
+				$curOption = 'OPTION_' . $optionCnt;
+
+				$return[$curOption] = $nKey;
+			}
+
+//			echo "OPTKION: $nKey";
+		}    // END // Durchlauf Produkte
+
+
+		// HARDCODE Fiber2home Web+
+		// Fiber2home web+ Check
+		// Wenn der Kunde nur Web (ExtID 832) + Speedupdate (ID 29 in eine der Optionen) hat
+		if ($curCustomerObj->custExpSet['EXT_PRODUKT_ID'] == '832'){
+			// '836' => 'FIBER2home WEB+',
+
+			if (in_array('29', $return)){
+				$curCustomerObj->custExpSet['EXT_PRODUKT_ID'] = '836';
+				$curCustomerObj->custExpSet['DIENST_BEZEICHNUNG'] = $hAnhang->productIDtoDesc[$this->setMandantID]['836'];
+			}
+		}
+
+		return $return;
+
+	}    // END private function getOptionsByCustomerID($curCustomerID)
 
 
 
@@ -403,7 +341,7 @@ class OutData extends CollectData
 	private function getBridgeModeByCustomerID($curCustomerID)
 	{
 
-		$return = array('BRIDGE_MODE' => '');
+		$return = array('BRIDGE_MODE' => 'KEIN');
 
 		// Aktuelle Customer-Klassen-Objekt zuweisen ... Grund: einfachere weitere Bearbeitung im Code
 		$curCustomerObj = $this->custArray[$curCustomerID];
@@ -417,26 +355,36 @@ class OutData extends CollectData
 		if ($curCustomerObj->custModemType == 'DOCSIS')
 			return $return;
 
-		$gotTitle1 = false;
-		$gotTitle2 = false;
-
 
 		// Durchlauf Produkte
 		foreach($curCustomerObj->custProductSet as $curProductID => $productArray) {
 
 			if ((isset($productArray['SR_RP_ID'])) && (strlen($productArray['SR_RP_ID']) > 1)) {
 
-				if ((isset($productArray['INFO_TITLE1'])) && (strlen($productArray['INFO_TITLE1']) > 1))
-					$gotTitle1 = true;
+				// Eintrag A abhandeln
+				$GotA = '';
+				if (isset($productArray['INFO_TEXT1'])) {
+					if ($productArray['INFO_TEXT1'] == 'Ja')
+						$GotA = 'J';
+					elseif ($productArray['INFO_TEXT1'] == 'Nein')
+						$GotA = 'N';
+				}
 
-				if ((isset($productArray['INFO_TITLE2'])) && (strlen($productArray['INFO_TITLE2']) > 1))
-					$gotTitle2 = true;
+
+				// Eintrag B abhandeln
+				$GotB = '';
+				if (isset($productArray['INFO_TEXT2'])) {
+					if ($productArray['INFO_TEXT2'] == 'Ja')
+						$GotB = 'J';
+					elseif ($productArray['INFO_TEXT2'] == 'Nein')
+						$GotB = 'N';
+				}
 
 				// Bridge? = N N
-				if ((!$gotTitle1) && (!$gotTitle2))
+				if (($GotA == 'N') && ($GotB == 'N'))
 					$curBridge = 'BRIDGE';    // N und N
 
-				elseif ((!$gotTitle1) && ($gotTitle2))
+				elseif (($GotA == 'N') && ($GotB == 'J'))
 					$curBridge = 'IPFON';    // N und J
 
 				else
@@ -489,7 +437,16 @@ class OutData extends CollectData
 
 				$return['HAUPTVERTEILER'] = $productArray['HAUPTVERTEILER'];
 				$return['KABELVERZWEIGER'] = $productArray['KABELVERZWEIGER'];
-				$return['DSLAM_PORT'] = $productArray['DSLAM_PORT'];
+
+				$data = $productArray['DSLAM_PORT'];
+				$search = '/(\d+)/';
+
+				if (preg_match($search, $data, $match))
+					$val = $match[1];
+				else
+					$val = $productArray['DSLAM_PORT'];
+
+				$return['DSLAM_PORT'] = $val;
 
 				return $return;
 			}
@@ -588,7 +545,10 @@ class OutData extends CollectData
 				$return['ROUTER_MAC_ADR'] = $productArray['SR_DATA_1'];
 
 				// DATA 3 = Serial No.
-				$return['ROUTER_SERIEN_NR'] = '';
+				if (strlen($productArray['SR_DATA_3'])>0)
+					$return['ROUTER_SERIEN_NR'] = $productArray['SR_DATA_3'];
+				else
+					$return['ROUTER_SERIEN_NR'] = '';
 			}
 
 
@@ -1186,6 +1146,172 @@ class OutData extends CollectData
 		return $return;
 
 	}    // END private function getVOIPPortTerminByContractID($curContractID)
+
+
+
+
+
+
+
+
+
+
+	public function writeToExcel()
+	{
+
+		$excel = $this->writeToExcelHeadline();
+
+
+		// Duchlauf Customer - Handler
+		foreach($this->custArray as $customerIDFromObject => $curCustObj) {
+
+			// Aktuelle KundenNummer
+			$curCustomerID = $curCustObj->custExpSet['KUNDEN_NR'];
+
+			// Aktuelle Customer-Klassen-Objekt zuweisen ... Grund: einfachere weitere Bearbeitung im Code
+			$curCustomerObj = $this->custArray[$curCustomerID];
+
+			// echo "Zeile: " . $cntRow . "<br>";
+
+			$leadingPipe = false;
+
+			foreach($curCustomerObj->custExpSet as $fieldname => $value) {
+
+				//echo "Feldname: " . $fieldname . " => Value: " . $value . "<br>";
+
+				// Trennzeichen setzen?
+				if ($leadingPipe)
+					$excel .= ';';
+
+				$excel .= '"' . utf8_encode(trim($value)) . '"';
+
+				// Ab jetzt Trennzeichen setzen!
+				$leadingPipe = true;
+
+			}
+
+			$excel .= "\r\n";
+
+		}
+
+
+//        echo "<br><hr>";
+//        echo "<pre>";
+//        print_r($excel);
+//        echo "</pre><br>";
+
+		// Datei schreiben:
+		$curFilename = $this->writeFile($this->setExportType, $excel);
+
+		return true;
+	}
+
+
+
+
+
+
+
+
+
+
+	public function writeToExcelHeadline()
+	{
+
+		$excel = '';
+
+		// Duchlauf Customer - Handler
+		foreach($this->custArray as $customerIDFromObject => $curCustObj) {
+
+			// Aktuelle KundenNummer
+			$curCustomerID = $curCustObj->custExpSet['KUNDEN_NR'];
+
+			// Aktuelle Customer-Klassen-Objekt zuweisen ... Grund: einfachere weitere Bearbeitung im Code
+			$curCustomerObj = $this->custArray[$curCustomerID];
+
+			// Prüfung auf custExpSet
+			if ((!isset($curCustomerObj->custExpSet)) || (count($curCustomerObj->custExpSet) < 1))
+				return false;
+
+			$leadingPipe = false;
+
+			foreach($curCustomerObj->custExpSet as $fieldname => $value) {
+
+				// echo "Feldname: " . $fieldname . " => Value: " . $value . "<br>";
+
+				// Trennzeichen setzen?
+				if ($leadingPipe)
+					$excel .= ';';
+
+				$excel .= '"' . utf8_encode(trim($fieldname)) . '"';
+
+				// Ab jetzt Trennzeichen setzen!
+				$leadingPipe = true;
+
+			}
+
+			$excel .= "\r\n";
+
+			break;
+
+		}    // END // Duchlauf Customer - Handler
+
+		return $excel;
+
+	}
+
+
+
+
+
+
+
+
+
+
+	// Schreibt die Export Datei mit Format Version und Datum
+	private function writeFile($type, $content, $filename = false)
+	{
+
+		if (!$filename)
+			$filename = 'DimariDiensteExp_' . $type . '_' . 'V001_' . date('Ymd');
+
+		// '/var/www/html/www/uploads/';
+		$fullFilePathAndName = 'uploads/exports/' . $filename . '.csv';
+
+
+		// Existiert Datei schon? ... wenn ja, Version erhöhen
+		if (file_exists($fullFilePathAndName)) {
+
+			// Versionsnummer ermitteln
+			preg_match('/(_V(\d+))/', $filename, $matches);
+			$fileVersion = $matches[2];
+
+			$nextVersion = $fileVersion + 1;
+			$nextVersion = sprintf("%'.03d", $nextVersion);
+
+			$filename = 'DimariDiensteExp_' . $type . '_V' . $nextVersion . '_' . date('Ymd');
+
+			// Für die Info-Ausgabe
+			$this->globalLastFilename = $filename;
+
+			// Selbstaufruf ... endet wenn freie Versionsnummer gefunden wurde
+			$this->writeFile($type, $content, $filename);
+		}
+		else {
+			// Für die Info-Ausgabe
+			$this->globalLastFilename = $filename;
+
+			if ($this->setExpFileCreation == 'yes') {
+				$fp = fopen($fullFilePathAndName, 'w');
+				fwrite($fp, $content);
+				fclose($fp);
+			}
+		}
+
+		return true;
+
+	}    // END public function writeFile($type, $content, $filename=false)
 
 
 }   // END class OutData

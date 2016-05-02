@@ -18,10 +18,6 @@ abstract class CollectData extends Message
 	// Export Typ: FTTC oder FTTH
 	public $setExportType = 'FTTH';
 
-	// Keine Export - Datei schreiben? (default no = Datei wird erzeugt)
-	public $setNoFileCreation = 'no';
-
-
 	// Telephonbuch ID Referenz
 	// Bei TKRZ: 0 = Kein Eintrag
 	//			10001 Standardeintrag
@@ -35,19 +31,27 @@ abstract class CollectData extends Message
 											 )
 	);
 
+	// Export - Datei schreiben? (default yes = Datei wird erzeugt)
+	public $setExpFileCreation = 'yes';
 
 	//  ACHTUNG Hauptverteiler, Kabelverzweiger und DSLAM_PORT habe ich nur bei GENEXIS - Kunden!
 	//  ACHTUNG keine Bridge-Daten bei DOCSIS Kunden... ist richtig so!
 	// Nur Customer einlesen der Kundennummer x besitzt?
-	public $setOnlyExampleCustomerID = '';    // 20010004
-//	public $setOnlyExampleCustomerID = '20010028';    // 20010004
-//	 20010028 ... Kunde mit Telefonbucheintrag (Docsis)
+	public $setOnlyExampleCustomerID = '';
+//	public $setOnlyExampleCustomerID = '20010412';
+	// 20010028 ... Kunde mit Telefonbucheintrag (Docsis)
 	// 20010184 ... Kunde mit mehr als einer Telefonnummer
 	// 20010230 ... ?
 	// 20010272 ... GENEXIS Kunde
 	// 20010043 ... Weder GENEXIS noch Arris
 	// 20010296 ... GENEXIS + TV
-	// 20010398 ... GENEXIS Bridge Daten gesetzt + Grundgebühr Energiekunde = 5 Euro Rabatt
+	// 20010398 ... GENEXIS Bridge J N (!) + Grundgebühr Energiekunde = 5 Euro Rabatt
+	// 20010034 ... Speedupgrade
+	// 20010398 ... Bridge Mode J N ... ?
+	// 20010124	... Bridge Mode N N	.. BRIDGE
+	// 20010123 ... Bridge Mode N J	... IPFON
+	// 20010261 ... ?
+	// 20010028 ... ?
 
 
 	// Wie viele Customer sollen eingelesen werden?
@@ -106,7 +110,7 @@ abstract class CollectData extends Message
 	// Wenn Produkt vorhanden ist... lösche ich es aus der Exportliste
 	// Format: Kennung Mandant => DelProduktID
 	public $setDelProduct = array('XYZ'  => array('1', '2'),
-								  'TKRZ' => array('10036', '10030')
+								  'TKRZ' => array('10030','10033')
 	);
 
 
@@ -251,6 +255,8 @@ abstract class CollectData extends Message
 
 
 
+
+
 		// VOIP Daten einlesen
 		$this->outNow('VOIP Daten einlesen', 'START ...', 'Runtime');
 		if ($this->getCOVoicedataByCOID())
@@ -286,6 +292,7 @@ abstract class CollectData extends Message
 		}
 
 
+
 		// Bereinige Cisco Kabelmodem und Arris Kabelmodem zugunsten von Arris
 		$this->outNow('Bereinige Produkte z.B.: Cisco Modem und Arris Modem zugunsten von Arris', 'START ...', 'Runtime');
 		if ($this->cleanResetProductVars())
@@ -306,6 +313,8 @@ abstract class CollectData extends Message
 
 			return false;
 		}
+
+
 
 
 		// MAC - und Hardwaredaten ermitteln
@@ -557,13 +566,25 @@ abstract class CollectData extends Message
 				$curSR_ID = $curProductArray['SR_ID'];
 
 
-				$query = "SELECT sr.SR_ID	AS	SR_SR_ID,
+				if ($curProductID != '10043'){
+					$query = "SELECT sr.SR_ID	AS	SR_SR_ID,
 								 sr.RP_ID	AS  SR_RP_ID,
 								 sd.*
 							FROM SERVICE_RESOURCE_CONTENTS sr
 						LEFT JOIN SERVICE_DATA sd ON sd.SD_ID = sr.SD_ID
 							WHERE sr.SR_ID = '" . $curSR_ID . "'
 							AND sd.TECHNOLOGY_ID ='0'";
+				}
+				else {
+					$query = "SELECT sr.SR_ID	AS	SR_SR_ID,
+								 sr.RP_ID	AS  SR_RP_ID,
+								 sd.*
+							FROM SERVICE_RESOURCE_CONTENTS sr
+						LEFT JOIN SERVICE_DATA sd ON sd.SD_ID = sr.SD_ID
+							WHERE sr.SR_ID = '" . $curSR_ID . "'
+							AND sd.COMPONENT_ID ='10041'";
+				}
+
 
 				$result = ibase_query($this->dbF, $query);
 
@@ -1162,6 +1183,24 @@ abstract class CollectData extends Message
 
 				$add = " WHERE cop.CO_ID = '" . $curContractID . "' ";
 
+//				$query = "SELECT cop.CO_ID          AS CO_ID,
+//                                 cop.CO_PRODUCT_ID  AS CO_PRODUCT_ID,
+//                                 cop.SR_ID			AS SR_ID,
+//                                 p.DESCRIPTION      AS DESCRIPTION,
+//                                 p.PRODUCT_ID       AS PRODUCT_ID,
+//                                 p.PRODUCT_CODE		AS COS_ID,
+//                                 p.INFO_TITLE1		AS PINFO_TITLE1,
+//                                 p.INFO_TITLE2		AS PINFO_TITLE2,
+//                                 cop.DATE_ACTIVE    AS COPDATE_ACTIVE,
+//                                 cop.DATE_DEACTIVE  AS COPDATE_DEACTIVE,
+//                                 a.ACCOUNTNO        AS ACCOUNTNO,
+//                                 a.DESCRIPTION      AS ADESCRIPTION
+//                            FROM CO_PRODUCTS cop
+//                              LEFT JOIN PRODUCTS p  ON p.PRODUCT_ID  = cop.PRODUCT_ID
+//                              LEFT JOIN ACCOUNTS a  ON a.ACCOUNTNO   = p.ACCOUNTNO
+//                              " . $add . "
+//                            ORDER BY cop.CO_PRODUCT_ID";
+
 				$query = "SELECT cop.CO_ID          AS CO_ID,
                                  cop.CO_PRODUCT_ID  AS CO_PRODUCT_ID,
                                  cop.SR_ID			AS SR_ID,
@@ -1173,10 +1212,13 @@ abstract class CollectData extends Message
                                  cop.DATE_ACTIVE    AS COPDATE_ACTIVE,
                                  cop.DATE_DEACTIVE  AS COPDATE_DEACTIVE,
                                  a.ACCOUNTNO        AS ACCOUNTNO,
-                                 a.DESCRIPTION      AS ADESCRIPTION
+                                 a.DESCRIPTION      AS ADESCRIPTION,
+                                 oi.INFO_TEXT1		AS INFO_TEXT1,
+                                 oi.INFO_TEXT2		AS INFO_TEXT2
                             FROM CO_PRODUCTS cop
                               LEFT JOIN PRODUCTS p  ON p.PRODUCT_ID  = cop.PRODUCT_ID
                               LEFT JOIN ACCOUNTS a  ON a.ACCOUNTNO   = p.ACCOUNTNO
+                              LEFT JOIN OBJECT_INFOS oi ON oi.OBJECT_ID = cop.CO_PRODUCT_ID
                               " . $add . "
                             ORDER BY cop.CO_PRODUCT_ID";
 
@@ -1208,6 +1250,8 @@ abstract class CollectData extends Message
 
 					$curCustObj->custProductSet[$row->PRODUCT_ID]['INFO_TITLE1'] = $row->PINFO_TITLE1;
 					$curCustObj->custProductSet[$row->PRODUCT_ID]['INFO_TITLE2'] = $row->PINFO_TITLE2;
+					$curCustObj->custProductSet[$row->PRODUCT_ID]['INFO_TEXT1'] = $row->INFO_TEXT1;
+					$curCustObj->custProductSet[$row->PRODUCT_ID]['INFO_TEXT2'] = $row->INFO_TEXT2;
 				}
 
 				ibase_free_result($result);

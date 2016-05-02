@@ -11,7 +11,7 @@ class Anhang
 
 	// Anhang - Produkt:
 	// Format: MandantID => ProduktID => ProduktBezeichnung
-	private $productIDtoDesc = array('0' => array('770' => 'VDSL4me',
+	public $productIDtoDesc = array('0' => array('770' => 'VDSL4me',
 												  '771' => 'FTTx VoIP',
 												  '830' => 'FIBER2home BASIC',
 												  '831' => 'FIBER2home PREMIUM',
@@ -19,7 +19,7 @@ class Anhang
 												  '833' => 'DOCSIS FON',
 												  '834' => 'DOCSIS WEB',
 												  '835' => 'DOCSIS FON/WEB',
-												  '836' => 'FIBER2home + WEB',
+												  '836' => 'FIBER2home WEB+',
 												  '810' => 'FIBER4business VoIP'
 	),
 									 '1' => array('838' => 'Surf 50/10 Flat',
@@ -33,27 +33,42 @@ class Anhang
 
 	// Zuweisung Produkt_ID zu neuer Produkt ID
 	public $productIDTo_DOCSIS = array('10026'    => '833',        // fiberFON
-										'10027'    => '834',        // fiberWEB
-										'together' => '835'         // Zusammen
+									   '10027'    => '834',        // fiberWEB
+									   'together' => '835'         // Zusammen
 	);
 
 	// Zuweisung Produkt_ID zu neuer Produkt ID
 	public $productIDTo_GENEXIS = array('10026'    => '810',       // fiberFON
-										 '10027'    => '832',       // fiberWEB
-										 '10044'    => '832',       // fiberWEB
-										 'together' => '830',       // Zusammen
-										 '10025'    => '831'        // + TV
+										'10027'    => '832',       // fiberWEB
+										'10044'    => '832',       // fiberWEB
+										'10071'    => '832',       // fiberWEB
+										'together' => '830',       // Zusammen
+										'10025'    => '831'        // + TV
+	);
+
+
+	// Zuweisung Optionen
+	// Format MandantID => AlteProductID (Optionen Speedupdate oder 5 Euro Rabatt) => Bezeichnung aus $productIDtoOptionIDtoDesc
+	public $productOptions = array('0' => array('10028' => 'Speedupgrade',
+												'10072' => 'Speedupgrade',
+												'10001' => '5 Euro Rabatt'
+	),
+								   '1' => array('xxx' => 'Speedupgrade xxxxxxx',
+												'xyz' => '5 Euro Rabatt xxxxxxx'
+								   )
 	);
 
 
 	// Anhang - Option:
 	// Format: ProduktID => OotionID => OptionBezeichnung
-	private $productIDtoOptionIDtoDesc = array('770' => array('7'  => 'NOCGN',
+//	'780' => array('20' => '5 Eruo Rabatt',
+//	'29' => 'Speedupgrade'),
+	public $productIDtoOptionIDtoDesc = array('770' => array('7'  => 'NOCGN',
 															  '15' => 'CGN',
 															  '21' => '5 Euro Rabatt',
 															  '35' => 'Gutschrift Anschlussaktivierung',
 															  '45' => 'Eigene Kunde CPE'),
-											   '780' => array('20' => '5 Eruo Rabatt',
+											   '832' => array('20' => '5 Euro Rabatt',
 															  '29' => 'Speedupgrade'),
 											   '782' => array('25' => '5 Euro Rabatt',
 															  '30' => 'Speedupgrade'),
