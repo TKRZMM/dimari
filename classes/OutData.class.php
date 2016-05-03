@@ -267,10 +267,10 @@ class OutData extends CollectData
 		// HARDCODE Fiber2home Web+
 		// Fiber2home web+ Check
 		// Wenn der Kunde nur Web (ExtID 832) + Speedupdate (ID 29 in eine der Optionen) hat
-		if ($curCustomerObj->custExpSet['EXT_PRODUKT_ID'] == '832'){
+		if ($curCustomerObj->custExpSet['EXT_PRODUKT_ID'] == '832') {
 			// '836' => 'FIBER2home WEB+',
 
-			if (in_array('29', $return)){
+			if (in_array('29', $return)) {
 				$curCustomerObj->custExpSet['EXT_PRODUKT_ID'] = '836';
 				$curCustomerObj->custExpSet['DIENST_BEZEICHNUNG'] = $hAnhang->productIDtoDesc[$this->setMandantID]['836'];
 			}
@@ -293,7 +293,7 @@ class OutData extends CollectData
 	private function getBandbreiteByCustomerID($curCustomerID)
 	{
 
-		$return = array('BANDBREITE' => '');
+		$return = array('BANDBREITE' => '0/0');
 
 		// Aktuelle Customer-Klassen-Objekt zuweisen ... Grund: einfachere weitere Bearbeitung im Code
 		$curCustomerObj = $this->custArray[$curCustomerID];
@@ -545,7 +545,7 @@ class OutData extends CollectData
 				$return['ROUTER_MAC_ADR'] = $productArray['SR_DATA_1'];
 
 				// DATA 3 = Serial No.
-				if (strlen($productArray['SR_DATA_3'])>0)
+				if (strlen($productArray['SR_DATA_3']) > 0)
 					$return['ROUTER_SERIEN_NR'] = $productArray['SR_DATA_3'];
 				else
 					$return['ROUTER_SERIEN_NR'] = '';
@@ -1021,6 +1021,19 @@ class OutData extends CollectData
 		// Aktuelle Customer-Klassen-Objekt zuweisen ... Grund: einfachere weitere Bearbeitung im Code
 		$curCustomerObj = $this->custArray[$curCustomerID];
 
+
+		$boolGotCarrierCode = false;
+		foreach($curCustomerObj->custSubIDSet as $curSubID => $subIDArray) {
+
+			if ((isset($subIDArray['CARRIER_CODE'])) && (strlen($subIDArray['CARRIER_CODE']) > 0))
+				$boolGotCarrierCode = true;
+
+		}
+
+		// Wenn kein Abg Carrier ... dann keine Portierung
+		if (!$boolGotCarrierCode)
+			return 'N';
+
 		// Wenn SUBS_ID ... Portierung J
 		if ((isset($curCustomerObj->custSubIDSet)) && (count($curCustomerObj->custSubIDSet) > 0))
 			return 'J';
@@ -1072,6 +1085,31 @@ class OutData extends CollectData
 			$getContractDataArray['UNTERZEICHNET_AM'] = $curCustomerObj->custContractSet[$curContractID]['UNTERZEICHNET_AM'];
 			$getContractDataArray['WIDERRUFEN_AM'] = $curCustomerObj->custContractSet[$curContractID]['WIDERRUFEN_AM'];
 			$getContractDataArray['GEKUENDIGT_AM'] = $curCustomerObj->custContractSet[$curContractID]['GEKUENDIGT_AM'];
+
+			// Gekündigter Datensatz? ... dann das gekündigt am berechnen
+			if (strlen($getContractDataArray['GUELTIG_BIS']) > 0) {
+
+				// Zwischenspeichern für einfachere Handhabung
+				$curGueltigBis = $getContractDataArray['GUELTIG_BIS'];
+
+
+				$strTime = strtotime($curGueltigBis);
+				$checkGueltigBis = date("Y-m-d", $strTime);
+				$today = date("Y-m-d");
+				if ($checkGueltigBis < $today){
+
+					$curGekuendigtAm = date( 'd.m.Y', strtotime( '-3 month', strtotime($curGueltigBis) ) );
+
+					$getContractDataArray['GEKUENDIGT_AM'] = $curGekuendigtAm;
+
+				}
+				else{
+					$curGekuendigtAm = date( 'd.m.Y', strtotime( '-6 month', strtotime($curGueltigBis) ) );
+
+					$getContractDataArray['GEKUENDIGT_AM'] = $curGekuendigtAm;
+				}
+			}
+
 
 
 			// Nur wenn noch kein Installationstermin des Kunden gestzt ist:

@@ -84,7 +84,11 @@ abstract class CollectData extends Message
 	);
 
 	// Customer mit folgender Nummer NICHT einlesen
-	public $setDoNotReadThisCustomerIDs = array('20010000');
+	public $setDoNotReadThisCustomerIDs = array('20010000',	// Vorname: Max 	Nachname: Testmeier
+												'20010081',	// Vorname: tkrz 	Nachname: tkrz_test2
+												'20011099', // Vorname: Thomas	Nachname: Eggenkämper ... Kunde mit ungültigem Vertrag
+												'20011244'	// Vorname: Maximilian 	Nachname: Wellmann ... Kunde mit ungültigem Vertrag
+	);
 
 	// Vertragstatus muss grösser Null sein? (bool var)	(DEFAULT false)
 	private $setReadOnlyContractStatusAboveNull = false;
