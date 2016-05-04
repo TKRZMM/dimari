@@ -273,12 +273,67 @@ class OutData extends CollectData
 			if (in_array('29', $return)) {
 				$curCustomerObj->custExpSet['EXT_PRODUKT_ID'] = '836';
 				$curCustomerObj->custExpSet['DIENST_BEZEICHNUNG'] = $hAnhang->productIDtoDesc[$this->setMandantID]['836'];
+
+				// Option jetzt wieder löschen
+				foreach($return as $key => $value) {
+					if ($value == '29')
+						$return[$key] = '';
+				}
+
+				// Optionen wieder nacheinander füllen (3 Durchläufe weil 3 Optionen notwendig)
+				$return = $this->sortOption($return);
+				$return = $this->sortOption($return);
+				$return = $this->sortOption($return);
+
 			}
 		}
 
 		return $return;
 
 	}    // END private function getOptionsByCustomerID($curCustomerID)
+
+
+
+
+
+
+
+
+
+
+	// Sortiert bzw. setzt die Optionen lückenlos
+	private function sortOption($return)
+	{
+
+		// Optionen neu sortieren
+		for($i = 1; $i <= 3; $i++) {
+
+			$curOption = 'OPTION_' . $i;
+
+			$prevCalc = $i - 1;
+			$prevOption = 'OPTION_' . $prevCalc;
+
+			// Aktuelle Option gesetzt?
+			if (strlen($return[$curOption]) >= 1) {
+
+				if ($prevCalc < 1)
+					continue;
+
+				// Vorherige Option frei?
+				if (strlen($return[$prevOption]) < 1) {
+					// Auf vorheriges schieben
+					$return[$prevOption] = $return[$curOption];
+
+					// Aktuelles freigeben
+					$return[$curOption] = '';
+				}
+			}
+
+		}
+
+		return $return;
+
+	}
 
 
 
@@ -304,18 +359,53 @@ class OutData extends CollectData
 			return $return;
 
 		$boolGotWeb = false;
-		$curBandbreite = '100/10';
+		if ($this->setMandantID == '0')        // Kunde von TKRZ
+			$curBandbreite = '100/10';
+		elseif ($this->setMandantID == '1')    // Kunde von RheiNet
+			$curBandbreite = '50/10';
+		else
+			$curBandbreite = '25/2,5';        // Kunde von X
 
 		// Durchlauf Produkte
 		foreach($curCustomerObj->custProductSet as $curProductID => $productArray) {
 
 			// Überhaupt ein Internet-Produkt vorhanden?
-			if ($productArray['ACCOUNTNO'] == '85300')
-				$boolGotWeb = true;
+			if ($this->setMandantID == '0') {
+				if ($productArray['ACCOUNTNO'] == '85300')
+					$boolGotWeb = true;
+			}
 
-			// Speedupgrade?
-			if (($curProductID == '10072') || ($curProductID == '10028'))
-				$curBandbreite = '200/20';
+			// Sonderfall bei RheiNet gehe ich über die ProduktID der GENEXIS BOX
+			if ($this->setMandantID == '1') {
+				if ($productArray['PRODUCT_ID'] == '10043')
+					$boolGotWeb = true;
+			}
+
+			// Sonderfall bei Schüttorf gehe ich über ProduktID 10027 (SWS.net-WEB - Internet 25/2,5)
+			if ($this->setMandantID == '3') {
+				if ($productArray['PRODUCT_ID'] == '10027')
+					$boolGotWeb = true;
+			}
+
+			// Speedupgrade TKRZ?
+			if ($this->setMandantID == '0') {
+				if (($curProductID == '10072') || ($curProductID == '10028'))
+					$curBandbreite = '200/20';
+			}
+
+			// RheiNet?
+			if ($this->setMandantID == '1') {
+				//if (($curProductID == '10062') || ($curProductID == 'xxx'))
+				if ($curProductID == '10062')
+					$curBandbreite = '100/20';
+			}
+
+			// Schüttorf? SPEEDUPGRADE?
+			if ($this->setMandantID == '3') {
+				if ($curProductID == '10028')
+					$curBandbreite = '50/5';
+			}
+
 
 		}    // END // Durchlauf Produkte
 
@@ -528,27 +618,54 @@ class OutData extends CollectData
 			if ((!isset($productArray['SR_RP_ID'])) || (strlen($productArray['SR_RP_ID']) < 1))
 				continue;
 
-			if ($curCustomerObj->custModemType == 'DOCSIS') {
-				$return['ROUTER_MODELL'] = $productArray['PRODUCT_NAME'];
+			// Mandant TKRZ
+			if ($this->setMandantID == '0') {
+				if ($curCustomerObj->custModemType == 'DOCSIS') {
+					$return['ROUTER_MODELL'] = $productArray['PRODUCT_NAME'];
 
-				// DATA 1 = MAC WEB
-				$return['ROUTER_MAC_ADR'] = $productArray['SR_DATA_1'];
+					// DATA 1 = MAC WEB
+					$return['ROUTER_MAC_ADR'] = $productArray['SR_DATA_1'];
 
-				// DATA 3 = Serial No.
-				$return['ROUTER_SERIEN_NR'] = $productArray['SR_DATA_3'];
-			}
-
-			elseif ($curCustomerObj->custModemType == 'GENEXIS') {
-				$return['ROUTER_MODELL'] = $productArray['PRODUCT_NAME'];
-
-				// DATA 1 = MAC WEB
-				$return['ROUTER_MAC_ADR'] = $productArray['SR_DATA_1'];
-
-				// DATA 3 = Serial No.
-				if (strlen($productArray['SR_DATA_3']) > 0)
+					// DATA 3 = Serial No.
 					$return['ROUTER_SERIEN_NR'] = $productArray['SR_DATA_3'];
-				else
-					$return['ROUTER_SERIEN_NR'] = '';
+				}
+
+				elseif ($curCustomerObj->custModemType == 'GENEXIS') {
+					$return['ROUTER_MODELL'] = $productArray['PRODUCT_NAME'];
+
+					// DATA 1 = MAC WEB
+					$return['ROUTER_MAC_ADR'] = $productArray['SR_DATA_1'];
+
+					// DATA 3 = Serial No.
+					if (strlen($productArray['SR_DATA_3']) > 0)
+						$return['ROUTER_SERIEN_NR'] = $productArray['SR_DATA_3'];
+					else
+						$return['ROUTER_SERIEN_NR'] = '';
+				}
+			}
+			else{
+				if ($curCustomerObj->custModemType == 'DOCSIS') {
+					$return['ROUTER_MODELL'] = $productArray['PRODUCT_NAME'];
+
+					// DATA 1 = MAC WEB
+					$return['ROUTER_MAC_ADR'] = $productArray['SR_DATA_1'];
+
+					// DATA 3 = Serial No.
+					$return['ROUTER_SERIEN_NR'] = $productArray['SR_DATA_3'];
+				}
+
+				elseif ($curCustomerObj->custModemType == 'GENEXIS') {
+					$return['ROUTER_MODELL'] = $productArray['PRODUCT_NAME'];
+
+					// DATA 1 = MAC WEB
+					$return['ROUTER_MAC_ADR'] = $productArray['SR_DATA_1'];
+
+					// DATA 3 = Serial No.
+					if (strlen($productArray['SR_DATA_3']) > 0)
+						$return['ROUTER_SERIEN_NR'] = $productArray['SR_DATA_3'];
+					else
+						$return['ROUTER_SERIEN_NR'] = '';
+				}
 			}
 
 
@@ -685,7 +802,7 @@ class OutData extends CollectData
 		$curModemType = $curCustomerObj->custModemType;
 
 		// in_Array Name:
-		$curInArray = 'productIDTo_' . $curModemType;
+		$curInArray = 'productIDTo_' . $curModemType . '_' . $this->setMandantID;
 
 		$myProds = array();
 
@@ -706,20 +823,40 @@ class OutData extends CollectData
 
 
 		$newProdID = '';
-		if (count($myProds) == 1) {    // Wenn 1 Produkt dann ... aus Anhan-Liste nehmen
-			$newProdID = $myProds[0];
+		// TODO auch für Schüttorf prüfen
+		if ($this->setMandantID == '0') {    // TKRZ
+
+			if (count($myProds) == 1) {    // Wenn 1 Produkt dann ... aus Anhan-Liste nehmen
+				$newProdID = $myProds[0];
+			}
+			elseif (count($myProds) == 2) {    // Wenn 2 Produkte dann ... Zusammen - Wert holen
+				$newProdID = $hAnhang->$curInArray['together'];
+			}
+			elseif (count($myProds) == 3) {    // + TV MUSS GENEXIS sein
+				$newProdID = $hAnhang->$curInArray['10025'];
+			}
+			elseif (count($myProds) == 4) {    // + TV MUSS GENEXIS sein
+				$newProdID = $hAnhang->$curInArray['10025'];
+			}
+			else {
+				echo "TKRZ Kann Dienst-Bezeichnung nicht festlegen für CustomerID: $curCustomerID<br>";
+			}
 		}
-		elseif (count($myProds) == 2) {    // Wenn 2 Produkte dann ... Zusammen - Wert holen
-			$newProdID = $hAnhang->$curInArray['together'];
+		elseif ($this->setMandantID == '1') {    // RheiNet
+			if (count($myProds) == 1) {    // Wenn 1 Produkt dann ... aus Anhan-Liste nehmen
+				$newProdID = $myProds[0];
+			}
+			else {
+				echo "RheiNet Kann Dienst-Bezeichnung nicht festlegen für CustomerID: $curCustomerID<br>";
+			}
 		}
-		elseif (count($myProds) == 3) {    // + TV MUSS GENEXIS sein
-			$newProdID = $hAnhang->$curInArray['10025'];
-		}
-		elseif (count($myProds) == 4) {    // + TV MUSS GENEXIS sein
-			$newProdID = $hAnhang->$curInArray['10025'];
-		}
-		else {
-			echo "kenn ich nicht $curCustomerID<br>";
+		elseif ($this->setMandantID == '3') {    // Schüttorf
+			if (count($myProds) == 1) {    // Wenn 1 Produkt dann ... aus Anhan-Liste nehmen
+				$newProdID = $myProds[0];
+			}
+			else {
+				echo "Schüttorf Kann Dienst-Bezeichnung nicht festlegen für CustomerID: $curCustomerID<br>";
+			}
 		}
 
 		$return['EXT_PRODUKT_ID'] = $newProdID;
@@ -1096,15 +1233,15 @@ class OutData extends CollectData
 				$strTime = strtotime($curGueltigBis);
 				$checkGueltigBis = date("Y-m-d", $strTime);
 				$today = date("Y-m-d");
-				if ($checkGueltigBis < $today){
+				if ($checkGueltigBis < $today) {
 
-					$curGekuendigtAm = date( 'd.m.Y', strtotime( '-3 month', strtotime($curGueltigBis) ) );
+					$curGekuendigtAm = date('d.m.Y', strtotime('-3 month', strtotime($curGueltigBis)));
 
 					$getContractDataArray['GEKUENDIGT_AM'] = $curGekuendigtAm;
 
 				}
-				else{
-					$curGekuendigtAm = date( 'd.m.Y', strtotime( '-6 month', strtotime($curGueltigBis) ) );
+				else {
+					$curGekuendigtAm = date('d.m.Y', strtotime('-6 month', strtotime($curGueltigBis)));
 
 					$getContractDataArray['GEKUENDIGT_AM'] = $curGekuendigtAm;
 				}
@@ -1312,7 +1449,7 @@ class OutData extends CollectData
 	{
 
 		if (!$filename)
-			$filename = 'DimariDiensteExp_' . $type . '_' . 'V001_' . date('Ymd');
+			$filename = 'DimariDiensteExp_' . $type . '_' . $this->setMandant . '_' . 'V001_' . date('Ymd');
 
 		// '/var/www/html/www/uploads/';
 		$fullFilePathAndName = 'uploads/exports/' . $filename . '.csv';
@@ -1328,7 +1465,7 @@ class OutData extends CollectData
 			$nextVersion = $fileVersion + 1;
 			$nextVersion = sprintf("%'.03d", $nextVersion);
 
-			$filename = 'DimariDiensteExp_' . $type . '_V' . $nextVersion . '_' . date('Ymd');
+			$filename = 'DimariDiensteExp_' . $type . '_' . $this->setMandant . '_V' . $nextVersion . '_' . date('Ymd');
 
 			// Für die Info-Ausgabe
 			$this->globalLastFilename = $filename;

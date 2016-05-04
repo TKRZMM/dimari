@@ -9,11 +9,17 @@
 abstract class CollectData extends Message
 {
 
-	// TKRZ / RheiNet / Schuettorf
-	public $setMandant = 'TKRZ';
+	/////////// ACHTUNG !!! VERGISS DIE CONFIG - DATEI NICHT !!! ////////////
 
-	// 0 TKRZ / 1 RheiNet / ? Schuettorf
-	public $setMandantID = '0';
+	// TKRZ / RheiNet / Schuettorf
+//	public $setMandant = 'TKRZ';
+	 public $setMandant = 'RheiNet';
+//	public $setMandant = 'Schuettorf';
+
+	// 0 TKRZ / 1 RheiNet / 3 Schuettorf
+//	public $setMandantID = 0;
+	public $setMandantID = 1;
+//	public $setMandantID = 3;
 
 	// Export Typ: FTTC oder FTTH
 	public $setExportType = 'FTTH';
@@ -23,11 +29,20 @@ abstract class CollectData extends Message
 	//			10001 Standardeintrag
 	// 			10002 nur Name und Rufnummer / ohne Adresse
 	// 			10003 Wissing Heike und Ansgar
-	public $setPhoneBookEntryIDToVal = array('XYZ'  => array('1'),
-											 'TKRZ' => array('0'     => '',
-															 '10001' => 'A',
-															 '10002' => 'V',
-															 '10003' => 'N',
+	public $setPhoneBookEntryIDToVal = array('RheiNet'    => array('0'     => '',
+																   '10001' => 'A',
+																   '10002' => 'V',
+																   '10003' => 'N'
+	),
+											 'TKRZ'       => array('0'     => '',
+																   '10001' => 'A',
+																   '10002' => 'V',
+																   '10003' => 'N'
+											 ),
+											 'Schuettorf' => array('0'     => '',
+																   '10001' => 'A',
+																   '10002' => 'V',
+																   '10003' => 'N'
 											 )
 	);
 
@@ -53,6 +68,10 @@ abstract class CollectData extends Message
 	// 20010261 ... ?
 	// 20010028 ... ?
 
+	// RheiNet
+	// 100002 ... normaler Kunde
+	// 100006 ... Router MAC Adresse prüfen
+
 
 	// Wie viele Customer sollen eingelesen werden?
 	// 0 für keine Einschränkung beim Limit
@@ -63,14 +82,23 @@ abstract class CollectData extends Message
 	// Tabelle: CUSTOMER_GROUP
 	// Feld:    GROUP_ID
 	// Format: Mandant => GROUP_ID
-	public $setCustomerByGroupID = array('XYZ'  => array('100011'),
-										 'TKRZ' => array('100001',
-														 '100002',
-														 '100005',
-														 '100006',
-														 '100007',
-														 '100008',
-														 '100010',
+	public $setCustomerByGroupID = array('Schuettorf' => array('100001',
+															   '100002',
+															   '100005',
+															   '100006'
+	),
+										 'RheiNet'    => array('100001',
+															   '100002',
+															   '100005',
+															   '100006'
+										 ),
+										 'TKRZ'       => array('100001',
+															   '100002',
+															   '100005',
+															   '100006',
+															   '100007',
+															   '100008',
+															   '100010',
 										 )
 	);
 
@@ -79,15 +107,16 @@ abstract class CollectData extends Message
 	// Tabelle: CUSTOMER_STATUS
 	// Feld:    STATUS_ID
 	// Nicht gekündigt '10004' ... nicht archiv '2'
-	public $setNoCustomerInStatusID = array('XYZ'  => array('10004', '2'),
-											'TKRZ' => array('10004', '2')
+	public $setNoCustomerInStatusID = array('Schuettorf' => array('10004', '2'),
+											'RheiNet'    => array('10004', '2'),
+											'TKRZ'       => array('10004', '2')
 	);
 
 	// Customer mit folgender Nummer NICHT einlesen
-	public $setDoNotReadThisCustomerIDs = array('20010000',	// Vorname: Max 	Nachname: Testmeier
-												'20010081',	// Vorname: tkrz 	Nachname: tkrz_test2
+	public $setDoNotReadThisCustomerIDs = array('20010000',    // Vorname: Max 	Nachname: Testmeier
+												'20010081',    // Vorname: tkrz 	Nachname: tkrz_test2
 												'20011099', // Vorname: Thomas	Nachname: Eggenkämper ... Kunde mit ungültigem Vertrag
-												'20011244'	// Vorname: Maximilian 	Nachname: Wellmann ... Kunde mit ungültigem Vertrag
+												'20011244'    // Vorname: Maximilian 	Nachname: Wellmann ... Kunde mit ungültigem Vertrag
 	);
 
 	// Vertragstatus muss grösser Null sein? (bool var)	(DEFAULT false)
@@ -104,26 +133,37 @@ abstract class CollectData extends Message
 	// Produkt-Bereinigung
 	// Wenn Produkt ID a und Produkt ID b ... dann lösche a und behalte b
 	// Format: Kennung Mandant => a => b
-	public $setClearProduct = array('XYZ'  => array('1' => '2'),
-									'TKRZ' => array('10035' => '10064',
-													'10042' => '10043')
+	public $setClearProduct = array('RheiNet'    => array('10054' => '10061',
+														  '10050' => '10063',
+														  '10055' => '10062',
+														  '10049' => '10060'),
+									'TKRZ'       => array('10035' => '10064',
+														  '10042' => '10043'),
+									'Schuettorf' => array('x' => 'x')
 	);
 
 
 	// Produkt-Bereinigung
 	// Wenn Produkt vorhanden ist... lösche ich es aus der Exportliste
 	// Format: Kennung Mandant => DelProduktID
-	public $setDelProduct = array('XYZ'  => array('1', '2'),
-								  'TKRZ' => array('10030','10033')
+	public $setDelProduct = array('RheiNet' => array('10049'),
+								  'TKRZ'    => array('10030', '10033'),
+								  'Schuettorf'    => array('10030', '10029','10001')
 	);
 
 
 	// GENEXIS ... DOCSIS Unterscheidung
 	// Tabelle: RESOURCE_PACKAGES
 	// Feld:    RP_ID
-	public $setModemType = array('XYZ'  => array('1', '2'),
-								 'TKRZ' => array('GENEXIS' => array('10007', '10009'),
-												 'DOCSIS'  => array('10015', '10006'))
+	public $setModemType = array('RheiNet' => array('GENEXIS' => array('10007', '10009'),
+													'DOCSIS'  => array('10006')
+	),
+								 'TKRZ'    => array('GENEXIS' => array('10007', '10009'),
+													'DOCSIS'  => array('10015', '10006')
+								 ),
+								 'Schuettorf'    => array('GENEXIS' => array('10007', '10009'),
+													'DOCSIS'  => array('10015', '10006')
+								 )
 	);
 
 	// Gellöschte Kunden der Exportliste anzeigen die nicht Doscis oder Arris sind? (Default false)
@@ -151,6 +191,9 @@ abstract class CollectData extends Message
 
 
 	public $globalLastFilename = ''; // Erzeugte Datei
+
+
+
 
 
 
@@ -259,8 +302,6 @@ abstract class CollectData extends Message
 
 
 
-
-
 		// VOIP Daten einlesen
 		$this->outNow('VOIP Daten einlesen', 'START ...', 'Runtime');
 		if ($this->getCOVoicedataByCOID())
@@ -320,7 +361,6 @@ abstract class CollectData extends Message
 
 
 
-
 		// MAC - und Hardwaredaten ermitteln
 		$this->outNow('MAC - und Hardwaredaten ermitteln', 'START ...', 'Runtime');
 		if ($this->getHardwareEntrysByCoProducts())
@@ -368,14 +408,14 @@ abstract class CollectData extends Message
 
 
 		// Debug - Ausgabe erzwingen wenn nur ein Kunde gesucht wird
-		if (strlen($this->setOnlyExampleCustomerID)>0){
+		if (strlen($this->setOnlyExampleCustomerID) > 0) {
 			echo "<pre><hr>";
 			print_r($this->custArray);
 //		foreach ($this->custArray as $x)
 //			print_r($x->custExpSet);
 			echo "<hr></pre><br>";
 		}
-		else{
+		else {
 //			echo "<pre><hr>";
 //			print_r($this->custArray);
 //			echo "<hr></pre><br>";
@@ -570,25 +610,70 @@ abstract class CollectData extends Message
 				$curSR_ID = $curProductArray['SR_ID'];
 
 
-				if ($curProductID != '10043'){
-					$query = "SELECT sr.SR_ID	AS	SR_SR_ID,
+				// TODO Schüttorf
+				// Query's für TKRZ
+				if ($this->setMandantID == '0') {
+					if ($curProductID != '10043') {
+						$query = "SELECT sr.SR_ID	AS	SR_SR_ID,
 								 sr.RP_ID	AS  SR_RP_ID,
 								 sd.*
 							FROM SERVICE_RESOURCE_CONTENTS sr
 						LEFT JOIN SERVICE_DATA sd ON sd.SD_ID = sr.SD_ID
 							WHERE sr.SR_ID = '" . $curSR_ID . "'
 							AND sd.TECHNOLOGY_ID ='0'";
-				}
-				else {
-					$query = "SELECT sr.SR_ID	AS	SR_SR_ID,
+					}
+					else {
+						$query = "SELECT sr.SR_ID	AS	SR_SR_ID,
 								 sr.RP_ID	AS  SR_RP_ID,
 								 sd.*
 							FROM SERVICE_RESOURCE_CONTENTS sr
 						LEFT JOIN SERVICE_DATA sd ON sd.SD_ID = sr.SD_ID
 							WHERE sr.SR_ID = '" . $curSR_ID . "'
 							AND sd.COMPONENT_ID ='10041'";
+					}
 				}
+				elseif ($this->setMandantID == '1') {    // Query's für RheiNet
+					if ($curProductID != '10043') {
+						$query = "SELECT sr.SR_ID	AS	SR_SR_ID,
+								 sr.RP_ID	AS  SR_RP_ID,
+								 sd.*
+							FROM SERVICE_RESOURCE_CONTENTS sr
+						LEFT JOIN SERVICE_DATA sd ON sd.SD_ID = sr.SD_ID
+							WHERE sr.SR_ID = '" . $curSR_ID . "'
+							AND sd.COMPONENT_ID ='10036'";
+					}
+					else {
+						$query = "SELECT sr.SR_ID	AS	SR_SR_ID,
+								 sr.RP_ID	AS  SR_RP_ID,
+								 sd.*
+							FROM SERVICE_RESOURCE_CONTENTS sr
+						LEFT JOIN SERVICE_DATA sd ON sd.SD_ID = sr.SD_ID
+							WHERE sr.SR_ID = '" . $curSR_ID . "'
+							AND sd.TECHNOLOGY_ID ='0'";
+					}
 
+				}
+				elseif ($this->setMandantID == '3') {    // Query's für Schüttorf
+					if ($curProductID != '10043') {
+						$query = "SELECT sr.SR_ID	AS	SR_SR_ID,
+								 sr.RP_ID	AS  SR_RP_ID,
+								 sd.*
+							FROM SERVICE_RESOURCE_CONTENTS sr
+						LEFT JOIN SERVICE_DATA sd ON sd.SD_ID = sr.SD_ID
+							WHERE sr.SR_ID = '" . $curSR_ID . "'
+							AND sd.COMPONENT_ID ='10036'";
+					}
+					else {
+						$query = "SELECT sr.SR_ID	AS	SR_SR_ID,
+								 sr.RP_ID	AS  SR_RP_ID,
+								 sd.*
+							FROM SERVICE_RESOURCE_CONTENTS sr
+						LEFT JOIN SERVICE_DATA sd ON sd.SD_ID = sr.SD_ID
+							WHERE sr.SR_ID = '" . $curSR_ID . "'
+							AND sd.TECHNOLOGY_ID ='0'";
+					}
+
+				}
 
 				$result = ibase_query($this->dbF, $query);
 
@@ -630,6 +715,7 @@ abstract class CollectData extends Message
 			}    // END // Durchlauf Produkte des Kunden
 
 		}    // END // Duchlauf Customer - Handler
+
 
 		$this->addMessage('&sum; Ermittelte Hardware (Router) -Einträge ', '' . $countHardware . '', 'Info');
 		$this->addMessage('&sum; Ermittelte Hardware (Router) -Einträge ', '' . $countHardware . '', 'Sum');
@@ -773,6 +859,9 @@ abstract class CollectData extends Message
 			// Aktuelle KundenNummer
 			$curCustomerID = $curCustObj->custExpSet['KUNDEN_NR'];
 
+			// Nicht löschen bei Kunden Nummer: 100037 (RheiNet)
+			if ($curCustomerID == '100037')
+				continue;
 
 			// Durchlauf custProductSet des Kunden
 			foreach($curCustObj->custProductSet as $curProduct_ID => $curProductPArray) {
@@ -785,6 +874,7 @@ abstract class CollectData extends Message
 				}
 
 			}    // END // Durchlauf custProductSet des Kunden
+
 
 		}    // END // Duchlauf Customer - Handler
 

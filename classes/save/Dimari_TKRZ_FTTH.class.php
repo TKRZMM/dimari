@@ -1235,7 +1235,6 @@ class Dimari_TKRZ_FTTH
 					if ( (in_array($curAccountNo, $this->setAccountIDForVOIP[$this->setExportType])) || ($curProductID == '10043') ) {
 						// Ja ist ein VOIP Produkt
 
-						// Blub Bin mir nicht sicher ob Status_ID grösser 0 sein muss... bei FTTC war dem so!
 						// $query = "SELECT * FROM CO_VOICEDATA WHERE CO_ID = '" . $curContractID . "' AND STATUS_ID > '0' ORDER BY COV_ID";
 						$query = "SELECT * FROM CO_VOICEDATA WHERE CO_ID = '" . $curContractID . "' AND STATUS_ID >= '0' ORDER BY COV_ID";
 						$result = ibase_query($this->dbF, $query);

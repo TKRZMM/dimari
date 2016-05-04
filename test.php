@@ -14,7 +14,6 @@ $search = '/(\d+)/';
 $val = $match[1];
 
 preg_match($search, $data, $match);
-// IDEBUG pre - tag
 echo "<pre><hr>";
 print_r($match);
 echo "<hr></pre><br>";
