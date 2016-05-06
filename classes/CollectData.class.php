@@ -12,14 +12,14 @@ abstract class CollectData extends Message
 	/////////// ACHTUNG !!! VERGISS DIE CONFIG - DATEI NICHT !!! ////////////
 
 	// TKRZ / RheiNet / Schuettorf
-//	public $setMandant = 'TKRZ';
-	 public $setMandant = 'RheiNet';
-//	public $setMandant = 'Schuettorf';
+//	public $setMandant = 'TKRZ';	// TKRZ
+	 public $setMandant = 'RheiNet';	// RheiNet
+//	public $setMandant = 'Schuettorf';	// Schuettorf
 
 	// 0 TKRZ / 1 RheiNet / 3 Schuettorf
-//	public $setMandantID = 0;
-	public $setMandantID = 1;
-//	public $setMandantID = 3;
+//	public $setMandantID = 0;	// TKRZ
+	public $setMandantID = 1;	// RheiNet
+//	public $setMandantID = 3;	// Schuettorf
 
 	// Export Typ: FTTC oder FTTH
 	public $setExportType = 'FTTH';
@@ -47,7 +47,7 @@ abstract class CollectData extends Message
 	);
 
 	// Export - Datei schreiben? (default yes = Datei wird erzeugt)
-	public $setExpFileCreation = 'yes';
+	public $setExpFileCreation = 'no';
 
 	//  ACHTUNG Hauptverteiler, Kabelverzweiger und DSLAM_PORT habe ich nur bei GENEXIS - Kunden!
 	//  ACHTUNG keine Bridge-Daten bei DOCSIS Kunden... ist richtig so!

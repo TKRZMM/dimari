@@ -766,6 +766,24 @@ class OutData extends CollectData
 		}    // END // Durchlauf Produkte
 
 
+		// Explizite VOIP - Prüfung TKRZ:
+		if ($this->setMandantID == '0'){
+			if (isset($curCustomerObj->custSubIDSet)){
+				if (count($curCustomerObj->custSubIDSet)>0){
+					// Genexis Kunde?
+					if ($curCustomerObj->custModemType == 'GENEXIS')
+						$return['VOIP_DIENST_BEZEICHNUNG'] = 'FTTx VoIP';
+					else
+						$return['VOIP_DIENST_BEZEICHNUNG'] = 'fiberFON';
+
+					$return['VOIP_EXT_PRODUKT_ID'] = '771';
+				}
+			}
+		}
+
+
+
+
 		return $return;
 
 	}    // END private function getVOIPDataByCustomerID($curCustomerID)
