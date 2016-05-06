@@ -12,13 +12,13 @@ abstract class CollectData extends Message
 	/////////// ACHTUNG !!! VERGISS DIE CONFIG - DATEI NICHT !!! ////////////
 
 	// TKRZ / RheiNet / Schuettorf
-	public $setMandant = 'TKRZ';	// TKRZ
-//	 public $setMandant = 'RheiNet';	// RheiNet
+//	public $setMandant = 'TKRZ';	// TKRZ
+	 public $setMandant = 'RheiNet';	// RheiNet
 //	public $setMandant = 'Schuettorf';	// Schuettorf
 
 	// 0 TKRZ / 1 RheiNet / 3 Schuettorf
-	public $setMandantID = 0;	// TKRZ
-//	public $setMandantID = 1;	// RheiNet
+//	public $setMandantID = 0;	// TKRZ
+	public $setMandantID = 1;	// RheiNet
 //	public $setMandantID = 3;	// Schuettorf
 
 	// Export Typ: FTTC oder FTTH

@@ -56,7 +56,7 @@ class Anhang
 										  '10049' => '838'        // Surf 50/10 Flat
 	);
 
-	// RheiNet
+	// Schüttorf
 	public $productIDTo_GENEXIS_3 = array('10043' => '837');
 
 
@@ -66,11 +66,12 @@ class Anhang
 												'10072' => 'Speedupgrade',
 												'10001' => '5 Euro Rabatt'
 	),
-								   '1' => array('xxx' => 'Speedupgrade xxxxxxx',
+								   '1' => array('10059' => 'Zusätzliche IP',
+												'10057' => 'Zusätzliche IP',
 												'xyz' => '5 Euro Rabatt xxxxxxx'
 								   ),
 								   '3' => array('10028' => 'Speedupgrade',
-												'xyz' => '5 Euro Rabatt xxxxxxx'
+												'10026' => 'Telefon Grundgebühr'
 								   )
 	);
 
@@ -94,8 +95,8 @@ class Anhang
 											  '834' => array('60' => 'Speedupgrade'),
 											  '835' => array('75' => 'Speedupgrade'),
 											  '836' => array('63' => '5 Euro Rabatt'),
-											  '840' => array('64' => 'zusätzliche IP'),
-											  '841' => array('65' => 'zusätzliche IP'),
+											  '840' => array('64' => 'Zusätzliche IP'),
+											  '841' => array('65' => 'Zusätzliche IP'),
 											  '837' => array('61' => 'Speedupgrade',
 															 '62' => 'Telefon Grundgebühr'),
 

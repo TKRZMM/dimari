@@ -803,6 +803,26 @@ class OutData extends CollectData
 			}
 		}
 
+		// Explizite VOIP - Prüfung RheiNet:
+		if ($this->setMandantID == '1') {
+			if (isset($curCustomerObj->custSubIDSet)) {
+				if (count($curCustomerObj->custSubIDSet) > 0) {
+					$return['VOIP_DIENST_BEZEICHNUNG'] = 'FTTx VoIP';
+					$return['VOIP_EXT_PRODUKT_ID'] = '771';
+				}
+			}
+		}
+
+		// Explizite VOIP - Prüfung Schüttorf:
+		if ($this->setMandantID == '3') {
+			if (isset($curCustomerObj->custSubIDSet)) {
+				if (count($curCustomerObj->custSubIDSet) > 0) {
+					$return['VOIP_DIENST_BEZEICHNUNG'] = 'FTTx VoIP';
+					$return['VOIP_EXT_PRODUKT_ID'] = '771';
+				}
+			}
+		}
+
 
 
 		return $return;
@@ -856,8 +876,31 @@ class OutData extends CollectData
 				// Array mit neuen Produkt - IDs erstellen
 				$myProds[] = $hAnhang->$curInArray[$curProductID];
 			}
+			else {
+				$otherProds[] = $curProductID;
+			}
 
 		}    // END // Durchlauf Produkte
+
+
+//		if (count($otherProds) > 0){
+//
+////			$noProdID = array('10043', '10046' , '10022', '10047' ,'10044' , '10057');
+//			$noProdID = array('10043', '10046' , '10022', '10047' ,'10044');
+//
+//			foreach ($otherProds as $key => $prodID){
+//				if (!in_array($prodID,  $noProdID)){
+//					echo "PRODUKT_ID $prodID<br>";
+//					// IDEBUG pre - tag
+//					echo "<pre><hr>";
+//					print_r($curCustomerObj);
+//					echo "<hr></pre><br>";
+//
+//					exit;
+//				}
+//			}
+//		}
+
 
 
 
@@ -865,7 +908,7 @@ class OutData extends CollectData
 		// TODO auch für Schüttorf prüfen
 		if ($this->setMandantID == '0') {    // TKRZ
 
-			if (count($myProds) == 1) {    // Wenn 1 Produkt dann ... aus Anhan-Liste nehmen
+			if (count($myProds) == 1) {    // Wenn 1 Produkt dann ... aus Anhang-Liste nehmen
 				$newProdID = $myProds[0];
 			}
 			elseif (count($myProds) == 2) {    // Wenn 2 Produkte dann ... Zusammen - Wert holen
@@ -882,7 +925,7 @@ class OutData extends CollectData
 			}
 		}
 		elseif ($this->setMandantID == '1') {    // RheiNet
-			if (count($myProds) == 1) {    // Wenn 1 Produkt dann ... aus Anhan-Liste nehmen
+			if (count($myProds) == 1) {    // Wenn 1 Produkt dann ... aus Anhang-Liste nehmen
 				$newProdID = $myProds[0];
 			}
 			else {
@@ -890,7 +933,7 @@ class OutData extends CollectData
 			}
 		}
 		elseif ($this->setMandantID == '3') {    // Schüttorf
-			if (count($myProds) == 1) {    // Wenn 1 Produkt dann ... aus Anhan-Liste nehmen
+			if (count($myProds) == 1) {    // Wenn 1 Produkt dann ... aus Anhang-Liste nehmen
 				$newProdID = $myProds[0];
 			}
 			else {
