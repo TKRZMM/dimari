@@ -286,6 +286,28 @@ class OutData extends CollectData
 				$return = $this->sortOption($return);
 
 			}
+
+			if (in_array('85', $return)) {
+
+				// Option jetzt wieder löschen
+				foreach($return as $key => $value) {
+					if ($value == '85')
+						$return[$key] = '';
+				}
+
+				if (strlen($return['OPTION_1']) < 1)
+					$return['OPTION_1'] = '63';
+				elseif (strlen($return['OPTION_2']) < 1)
+					$return['OPTION_2'] = '63';
+				elseif (strlen($return['OPTION_3']) < 1)
+					$return['OPTION_3'] = '63';
+
+				// Optionen wieder nacheinander füllen (3 Durchläufe weil 3 Optionen notwendig)
+				$return = $this->sortOption($return);
+				$return = $this->sortOption($return);
+				$return = $this->sortOption($return);
+
+			}
 		}
 
 		return $return;
@@ -643,7 +665,7 @@ class OutData extends CollectData
 						$return['ROUTER_SERIEN_NR'] = '';
 				}
 			}
-			else{
+			else {
 				if ($curCustomerObj->custModemType == 'DOCSIS') {
 					$return['ROUTER_MODELL'] = $productArray['PRODUCT_NAME'];
 
@@ -767,9 +789,9 @@ class OutData extends CollectData
 
 
 		// Explizite VOIP - Prüfung TKRZ:
-		if ($this->setMandantID == '0'){
-			if (isset($curCustomerObj->custSubIDSet)){
-				if (count($curCustomerObj->custSubIDSet)>0){
+		if ($this->setMandantID == '0') {
+			if (isset($curCustomerObj->custSubIDSet)) {
+				if (count($curCustomerObj->custSubIDSet) > 0) {
 					// Genexis Kunde?
 					if ($curCustomerObj->custModemType == 'GENEXIS')
 						$return['VOIP_DIENST_BEZEICHNUNG'] = 'FTTx VoIP';
@@ -780,7 +802,6 @@ class OutData extends CollectData
 				}
 			}
 		}
-
 
 
 
@@ -1353,7 +1374,6 @@ class OutData extends CollectData
 	{
 
 		$excel = $this->writeToExcelHeadline();
-
 
 		// Duchlauf Customer - Handler
 		foreach($this->custArray as $customerIDFromObject => $curCustObj) {

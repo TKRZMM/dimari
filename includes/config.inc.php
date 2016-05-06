@@ -8,8 +8,8 @@
 
 
 
-//$host     = '192.168.235.2:E:\variobill\production_tkrz\data\TKRZ_VARIOBILL.FDB';	// TKRZ
-$host     = '192.168.235.2:E:\variobill\production_rheinet\data\RNT_VARIOBILL.FDB';	// RheiNet
+$host     = '192.168.235.2:E:\variobill\production_tkrz\data\TKRZ_VARIOBILL.FDB';	// TKRZ
+//$host     = '192.168.235.2:E:\variobill\production_rheinet\data\RNT_VARIOBILL.FDB';	// RheiNet
 //$host     = '192.168.235.2:E:\variobill\production_stw_schuettorf\data\SSF_VARIOBILL.FDB';	// Schüttorf
 
 

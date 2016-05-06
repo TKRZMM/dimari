@@ -12,13 +12,13 @@ abstract class CollectData extends Message
 	/////////// ACHTUNG !!! VERGISS DIE CONFIG - DATEI NICHT !!! ////////////
 
 	// TKRZ / RheiNet / Schuettorf
-//	public $setMandant = 'TKRZ';	// TKRZ
-	 public $setMandant = 'RheiNet';	// RheiNet
+	public $setMandant = 'TKRZ';	// TKRZ
+//	 public $setMandant = 'RheiNet';	// RheiNet
 //	public $setMandant = 'Schuettorf';	// Schuettorf
 
 	// 0 TKRZ / 1 RheiNet / 3 Schuettorf
-//	public $setMandantID = 0;	// TKRZ
-	public $setMandantID = 1;	// RheiNet
+	public $setMandantID = 0;	// TKRZ
+//	public $setMandantID = 1;	// RheiNet
 //	public $setMandantID = 3;	// Schuettorf
 
 	// Export Typ: FTTC oder FTTH
@@ -167,7 +167,7 @@ abstract class CollectData extends Message
 	);
 
 	// Gellöschte Kunden der Exportliste anzeigen die nicht Doscis oder Arris sind? (Default false)
-	public $showDeletedCustomerNumberByModemType = false;
+	public $showDeletedCustomerNumberByModemType = true;
 
 	////////////////////////////////// Do not edit below this line!!! /////////////////////////////
 
@@ -444,9 +444,11 @@ abstract class CollectData extends Message
 	{
 
 		$delCnt = '0';
+		$unknown = array();
 
 		// Duchlauf Customer - Handler
 		foreach($this->custArray as $customerIDFromObject => $curCustObj) {
+
 
 			// Aktuelle KundenNummer
 			$curCustomerID = $curCustObj->custExpSet['KUNDEN_NR'];
@@ -484,12 +486,21 @@ abstract class CollectData extends Message
 			if ($curType == 'unknown') {
 				$delCnt++;
 				unset($this->custArray[$curCustomerID]);
+				$unknown[] = $curCustomerID;
 			}
 			else
 				$curCustObj->custModemType = $curType;
 
 
 		}    // END // Duchlauf Customer - Handler
+
+		// Gelöschte CustomerNummern ausgeben?
+		if ((count($unknown) > 0) && ($this->showDeletedCustomerNumberByModemType)) {
+			print('Gelöschte KundenNummer die nicht ins Muster Docis oder GENEXIS passen (CustomerID) :');
+			echo "<pre><br>";
+			print_r($unknown);
+			echo "<hr></pre><br>";
+		}
 
 		// Wieviel Kunden haben wir jetzt noch?
 		$cntCustomerToExport = count($this->custArray);

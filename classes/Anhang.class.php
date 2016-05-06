@@ -77,8 +77,6 @@ class Anhang
 
 	// Anhang - Option:
 	// Format: ProduktID => OotionID => OptionBezeichnung
-//	'780' => array('20' => '5 Eruo Rabatt',
-//	'29' => 'Speedupgrade'),
 	public $productIDtoOptionIDtoDesc = array('770' => array('7'  => 'NOCGN',
 															 '15' => 'CGN',
 															 '21' => '5 Euro Rabatt',
